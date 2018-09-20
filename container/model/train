@@ -70,11 +70,15 @@ if __name__ == '__main__':
     try:
         with open(param_path, 'r') as hyper:
             training_params = json.load(hyper)
+        
+        print(training_params.get('n_clusters', 30))
+        raise ('forced')
         # Array of data_x, and data_y values
         data_x, data_y = get_data() 
         print('[SUCCESS] data parsed')
         #create a model based on hyper_params
-        model = create_model(len(data_y), training_params) 
+        model = create_model(len(data_y), training_params)
+
         print('[SUCCESS] model created')
 
         #trains model from the parsed s3 data
