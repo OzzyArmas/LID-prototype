@@ -23,8 +23,9 @@ class GMM(Model):
         '''
         if not type(n_clusters) == int:
             self.gmm = []
+            print(n_clusters)
             for model in range(languages):
-                self.gmm.append(GaussianMixture(n_components=n_clusters[model], 
+                self.gmm.append(GaussianMixture(n_components=int(n_clusters[model]), 
                                 covariance_type=cov_type,
                                 max_iter=iter, 
                                 random_state=0))
@@ -32,7 +33,7 @@ class GMM(Model):
         else:
             self.gmm = []
             for model in range(languages):
-                self.gmm.append(GaussianMixture(n_components=n_clusters, 
+                self.gmm.append(GaussianMixture(n_components=n_clusters,
                                 covariance_type=cov_type,
                                 max_iter=iter, 
                                 random_state=0))
@@ -51,6 +52,8 @@ class GMM(Model):
         shape = np.shape(training_set)
         if len(shape) > 2:
             reshaped_training = np.array(training_set).reshape((shape[0] * shape[1]), shape[2])
+            self.gmm[language_idx] = self.gmm[language_idx].fit(reshaped_training)
+
         else:
             self.gmm[language_idx] = self.gmm[language_idx].fit(training_set)
         
