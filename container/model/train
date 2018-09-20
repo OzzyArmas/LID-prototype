@@ -25,9 +25,9 @@ def train(model, data_x, data_y):
     '''
     #separate data into snippet_length samples
     #features_es.reshape((int(np.shape(features_es)[0] / sample_length), sample_length, -1))
-    for lang, idx in data_y:
-        x = data_x[idx]
-        model.train(x,idx)
+    for lang in data_y:
+        x = data_x[data_y[lang]]
+        model.train(x,data_y[lang])
     return model
 
 def get_data():
