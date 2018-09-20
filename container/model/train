@@ -63,7 +63,7 @@ def create_model(languages, training_params):
     it = training_params.get('iter', 100)
     snip = training_params.get('snippet_length', 75)
     languages = training_params.get('languages', languages)
-    print(clusters)
+    print(type(clusters))
     return gmm.GMM(clusters, covar, it, snip, languages)
 
 if __name__ == '__main__':
@@ -74,9 +74,9 @@ if __name__ == '__main__':
         # Array of data_x, and data_y values
         data_x, data_y = get_data() 
         print('[SUCCESS] data parsed')
+
         #create a model based on hyper_params
         model = create_model(len(data_y), training_params)
-
         print('[SUCCESS] model created')
 
         #trains model from the parsed s3 data
