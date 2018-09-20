@@ -8,6 +8,7 @@ import sys
 import pickle
 import json
 import time
+import ast
 
 
 prefix = '/opt/ml/'
@@ -58,7 +59,7 @@ def create_model(languages, training_params):
     hyper parameters for gmm.GMM()
     n_clusters = 30, cov_type='full', iter = 100, snippet_length=75, languages=2
     '''
-    clusters = training_params.get('n_clusters', 30)
+    clusters = ast.literal_eval(training_params.get('n_clusters', 30))
     covar = training_params.get('cov_type', 'full')
     it = training_params.get('iter', 100)
     snip = training_params.get('snippet_length', 75)
