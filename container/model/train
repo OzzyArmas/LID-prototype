@@ -60,7 +60,7 @@ def create_model(languages, training_params):
     '''
     clusters = training_params.get('n_clusters', 30)
     covar = training_params.get('cov_type', 'full')
-    it = training_params('iter', 100)
+    it = training_params.get('iter', 100)
     snip = training_params.get('snippet_length', 75)
     languages = training_params.get('languages', languages)
 
@@ -72,15 +72,17 @@ if __name__ == '__main__':
             training_params = json.load(hyper)
         # Array of data_x, and data_y values
         data_x, data_y = get_data() 
-
+        print('[SUCCESS] data parsed')
         #create a model based on hyper_params
         model = create_model(len(data_y), training_params) 
-        
+        print('[SUCCESS] model created')
+
         #trains model from the parsed s3 data
         model = train(model,data_x, data_y)
-
+        print('[SUCCESS] model trained')
         #Saves model as a pickle
         save_model(model)
+        print('[SUCCESS] model saved')
 
     except Exception as e:
         trc = traceback.format_exc()
