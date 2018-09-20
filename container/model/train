@@ -71,8 +71,6 @@ if __name__ == '__main__':
         with open(param_path, 'r') as hyper:
             training_params = json.load(hyper)
         
-        print(training_params.get('n_clusters', 30))
-        raise ('forced')
         # Array of data_x, and data_y values
         data_x, data_y = get_data() 
         print('[SUCCESS] data parsed')
