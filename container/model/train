@@ -9,7 +9,7 @@ import pickle
 import json
 import time
 import ast
-
+import logging
 
 prefix = '/opt/ml/'
 input_path = prefix + 'input/data'
@@ -20,6 +20,9 @@ param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 channel = 'training'
 training_path = os.path.join(input_path, channel)
 
+logger = logging.getLogger('instance')
+lvl = logging.WARNING
+
 def train(model, data_x, data_y):
     '''
     train(x,y)
@@ -27,8 +30,15 @@ def train(model, data_x, data_y):
     #separate data into snippet_length samples
     #features_es.reshape((int(np.shape(features_es)[0] / sample_length), sample_length, -1))
     for lang in data_y:
-        x = data_x[data_y[lang]]
+        x = data_x[data_y[lang]][model.snippet_length - 1:]
+        shape = np.shape(x)
+        logger.log(lvl, f'shape before: {shape}')
+        x = np.array(x).reshape((shape[0] * shape[1]), shape[2])
+        logger.log(lvl, f'shape after: {np.shape(x)}')
+
         model.train(x,data_y[lang])
+
+
     return model
 
 def get_data():
@@ -39,6 +49,7 @@ def get_data():
     for idx, language in enumerate(os.listdir(training_path)):
         data_y[language[:-4]] = idx
         data_x.append(pd.read_csv(os.path.join(training_path, language)).as_matrix())
+
     if len(data_x) == 0:
         raise Exception('no data was loaded')
     return (data_x, data_y)
@@ -64,7 +75,7 @@ def create_model(languages, training_params):
     it = training_params.get('iter', 100)
     snip = training_params.get('snippet_length', 75)
     languages = training_params.get('languages', languages)
-    print(type(clusters))
+    logger.log(lvl, type(clusters))
     return gmm.GMM(clusters, covar, it, snip, languages)
 
 if __name__ == '__main__':
@@ -74,18 +85,18 @@ if __name__ == '__main__':
         
         # Array of data_x, and data_y values
         data_x, data_y = get_data() 
-        print('[SUCCESS] data parsed')
+        logger.log(lvl, '[SUCCESS] data parsed')
 
         #create a model based on hyper_params
         model = create_model(len(data_y), training_params)
-        print('[SUCCESS] model created')
+        logger.log(lvl, '[SUCCESS] model created')
 
         #trains model from the parsed s3 data
         model = train(model,data_x, data_y)
-        print('[SUCCESS] model trained')
+        logger.log(lvl, '[SUCCESS] model trained')
         #Saves model as a pickle
         save_model(model)
-        print('[SUCCESS] model saved')
+        logger.log(lvl, '[SUCCESS] model saved')
 
     except Exception as e:
         trc = traceback.format_exc()
