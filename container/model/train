@@ -64,7 +64,7 @@ def save_model(model):
     dump pickle on S3
     '''
     file_name = 'gmm' + time.strftime("%Y-%m-%d-%H-%M-%S", time.gmtime()) + '.plk'
-    with open(os.path.join(model_path, file_name), 'w') as out:
+    with open(os.path.join(model_path, file_name), 'wb') as out:
         pickle.dump(model, out)
     
 def create_model(languages, training_params):
