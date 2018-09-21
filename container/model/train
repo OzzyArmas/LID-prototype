@@ -58,7 +58,7 @@ def get_data():
     return (data_x, data_y)
         
     
-def save_model(model, params):
+def save_model(model):
     '''
     dump model to a pickle
     dump pickle on S3
