@@ -2,6 +2,7 @@
 
 from models import gmm
 import pandas as pd
+import numpy as np
 import os
 import traceback
 import sys
@@ -32,9 +33,9 @@ def train(model, data_x, data_y):
     for lang in data_y:
         x = data_x[data_y[lang]][model.snippet_length - 1:]
         shape = np.shape(x)
-        print( f'shape before: {shape}')
+        logger.log(lvl, f'shape before: {shape}')
         x = np.array(x).reshape((shape[0] * shape[1]), shape[2])
-        print( f'shape after: {np.shape(x)}')
+        logger.log(lvl, f'shape after: {np.shape(x)}')
 
         model.train(x,data_y[lang])
 
@@ -75,7 +76,7 @@ def create_model(languages, training_params):
     it = training_params.get('iter', 100)
     snip = training_params.get('snippet_length', 75)
     languages = training_params.get('languages', languages)
-    print( type(clusters))
+    logger.log(lvl, type(clusters))
     return gmm.GMM(clusters, covar, it, snip, languages)
 
 if __name__ == '__main__':
@@ -85,24 +86,24 @@ if __name__ == '__main__':
         
         # Array of data_x, and data_y values
         data_x, data_y = get_data() 
-        print( '[SUCCESS] data parsed')
+        logger.log(lvl, '[SUCCESS] data parsed')
 
         #create a model based on hyper_params
         model = create_model(len(data_y), training_params)
-        print( '[SUCCESS] model created')
+        logger.log(lvl, '[SUCCESS] model created')
 
         #trains model from the parsed s3 data
         model = train(model,data_x, data_y)
-        print( '[SUCCESS] model trained')
+        logger.log(lvl, '[SUCCESS] model trained')
         #Saves model as a pickle
         save_model(model)
-        print( '[SUCCESS] model saved')
+        logger.log(lvl, '[SUCCESS] model saved')
 
     except Exception as e:
         trc = traceback.format_exc()
         with open(os.path.join(output_path, 'failure'), 'w') as err:
             err.write('Exception during training: ' + str(e) + '\n' + trc)
         # Printing this causes the exception to be in the training job logs, as well.
-        print('Exception during training: ' + str(e) + '\n' + trc, file=sys.stderr)
+        logger.log(lvl,'Exception during training: ' + str(e) + '\n' + trc, file=sys.stderr)
         # A non-zero exit code causes the training job to be marked as Failed.
         sys.exit(255)
