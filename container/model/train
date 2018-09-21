@@ -31,7 +31,7 @@ def train(model, data_x, data_y):
     #separate data into snippet_length samples
     #features_es.reshape((int(np.shape(features_es)[0] / sample_length), sample_length, -1))
     for lang in data_y:
-        x = data_x[data_y[lang]][model.snippet_length - 1:]
+        x = data_x[data_y[lang]]
         shape = np.shape(x)
         logger.log(lvl, f'shape before: {shape}')
         x = np.array(x).reshape((shape[0] * shape[1]), shape[2])
@@ -104,6 +104,6 @@ if __name__ == '__main__':
         with open(os.path.join(output_path, 'failure'), 'w') as err:
             err.write('Exception during training: ' + str(e) + '\n' + trc)
         # Printing this causes the exception to be in the training job logs, as well.
-        logger.log(lvl,'Exception during training: ' + str(e) + '\n' + trc, file=sys.stderr)
+        print('Exception during training: ' + str(e) + '\n' + trc, file=sys.stderr)
         # A non-zero exit code causes the training job to be marked as Failed.
         sys.exit(255)
