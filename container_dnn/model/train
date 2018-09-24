@@ -63,7 +63,9 @@ def save_model(model):
     dump model to a pickle
     dump pickle on S3
     '''
-    file_name = 'gmm' + time.strftime("%Y-%m-%d-%H-%M-%S", time.gmtime()) + '.plk'
+    file_name = 'gmm:' + str(model.clusters) + \
+                 time.strftime(":%Y-%m-%d-%H-%M-%S", time.gmtime()) + '.plk'
+
     with open(os.path.join(model_path, file_name), 'wb') as out:
         pickle.dump(model, out)
     

@@ -6,6 +6,7 @@ see: scikit-learn
 '''
 from sklearn.mixture import GaussianMixture
 from collections import defaultdict
+from collections import Conuter
 from models.GenericModel import Model
 import numpy as np
 
@@ -41,6 +42,7 @@ class GMM(Model):
         self.snippet_length = snippet_length
         #initialize cluster array, assignment occurs during training
         self.cluster_distributions = [None] * languages
+        self.clusters = n_clusters
 
     def train(self, training_set, language_idx):
         '''
@@ -65,14 +67,19 @@ class GMM(Model):
         :param training_set: training set for one language vectors for each sample
         :gmm: language specific gmm model used for training
         '''
-        cluster_dist = defaultdict(float)
-        for vectors in training_set:
-            for cluster in gmm.predict(vectors):
-                cluster_dist[cluster] += 1
-        
+
+        cluster_dist = Counter
+
+        if len(np.shape(training_set)) > 2:
+            for vectors in training_set:
+                cluster_dist.update(gmm.predict(vectors))
+        else:
+            cluster_dist = Counter(gmm.predict(training_set))
+
         cluster_counts = sum(cluster_dist.values())
         for cluster in cluster_dist:
             cluster_dist[cluster] = cluster_dist[cluster] / cluster_counts
+
         return cluster_dist
 
     def bayes_predict(self, test_vec):
