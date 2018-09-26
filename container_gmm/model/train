@@ -20,11 +20,33 @@ param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
 channel = 'training'
 training_path = os.path.join(input_path, channel)
+train_data = os.path.join(training_path, 'train')
+test_data = os.path.join(training_path, 'test')
 
 logger = logging.getLogger('instance')
 lvl = logging.WARNING
 debug = False
 #load params
+
+def eval(model, debug):
+    data_y = {}
+    data_x = []
+    for idx, language in enumerate(os.listdir(test_data)):
+        data_y[language[:-4]] = idx
+        if debug:
+            data_x.append(pd.read_csv(os.path.join(test_data, language)).as_matrix()[:750])
+        else:
+            data_x.append(pd.read_csv(os.path.join(test_data, language)).as_matrix())
+
+    if len(data_x) == 0:
+        raise Exception('no data was loaded')
+    
+    #accuracy
+    acc = {}
+    for lang in data_y:
+        pred = model.predict_all(data_x[data_y[lang]])
+        acc[lang] = np.average(pred == data_y[lang])
+    return acc
 
 def train(model, data_x, data_y):
     '''
@@ -51,12 +73,12 @@ def get_data(debug):
     '''
     data_y = {}
     data_x = []
-    for idx, language in enumerate(os.listdir(training_path)):
+    for idx, language in enumerate(os.listdir(train_data)):
         data_y[language[:-4]] = idx
         if debug:
-            data_x.append(pd.read_csv(os.path.join(training_path, language)).as_matrix()[:750])
+            data_x.append(pd.read_csv(os.path.join(train_data, language)).as_matrix()[:750])
         else:
-            data_x.append(pd.read_csv(os.path.join(training_path, language)).as_matrix())
+            data_x.append(pd.read_csv(os.path.join(train_data, language)).as_matrix())
 
     if len(data_x) == 0:
         raise Exception('no data was loaded')
@@ -64,13 +86,12 @@ def get_data(debug):
     return (data_x, data_y)
         
     
-def save_model(model):
+def save_model(model, acc):
     '''
     dump model to a pickle
     dump pickle on S3
     '''
-    file_name = 'gmm:' + str(model.clusters) + \
-                 time.strftime(":%Y-%m-%d-%H-%M-%S", time.gmtime()) + '.plk'
+    file_name = f'''gmm_clust-{str(model.clusters)}_acc-{int(acc * 100)}.plk'''
 
     with open(os.path.join(model_path, file_name), 'wb') as out:
         pickle.dump(model, out)
@@ -107,7 +128,11 @@ if __name__ == '__main__':
         model = train(model,data_x, data_y)
         logger.log(lvl, '[SUCCESS] model trained')
         #Saves model as a pickle
-        save_model(model)
+
+        acc = eval(model, debug)
+
+        save_model(model, acc)
+        
         logger.log(lvl, '[SUCCESS] model saved')
 
     except Exception as e:
