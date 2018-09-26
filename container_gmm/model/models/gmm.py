@@ -51,13 +51,7 @@ class GMM(Model):
         model assumes each utterance is independent of any other utterance,
         where utterance is a 10ms snippet
         '''
-        shape = np.shape(training_set)
-        if len(shape) > 2:
-            reshaped_training = np.array(training_set).reshape((shape[0] * shape[1]), shape[2])
-            self.gmm[language_idx] = self.gmm[language_idx].fit(reshaped_training)
-
-        else:
-            self.gmm[language_idx] = self.gmm[language_idx].fit(training_set)
+        self.gmm[language_idx] = self.gmm[language_idx].fit(training_set)
         
         self.cluster_distributions[language_idx] = \
             self.make_cluster_dist(training_set, self.gmm[language_idx])
@@ -68,14 +62,7 @@ class GMM(Model):
         :gmm: language specific gmm model used for training
         '''
 
-        cluster_dist = Counter
-
-        if len(np.shape(training_set)) > 2:
-            for vectors in training_set:
-                cluster_dist.update(gmm.predict(vectors))
-        else:
-            cluster_dist = Counter(gmm.predict(training_set))
-
+        cluster_dist = Counter(gmm.predict(training_set))
         cluster_counts = sum(cluster_dist.values())
         for cluster in cluster_dist:
             cluster_dist[cluster] = cluster_dist[cluster] / cluster_counts
@@ -89,21 +76,22 @@ class GMM(Model):
 
         for gmm in self.gmm:
             preds.append(gmm.predict(test_vec))
+            # score = log (P(vec| z, lang))
             scores.append(gmm.score_samples(test_vec))
 
 
         # sum(log(P(vec|z,lang)) + log(z|lang))
         prob_sum = []
         for pred,score,dist in zip(preds, scores, self.cluster_distributions):
-            prob_sum.append(np.sum(score) + np.sum(np.log([dist[cluster] for cluster in pred if dist[cluster] > 0])))
+            prob_sum.append(np.sum(score) + np.sum(np.log([dist[cluster] for cluster in pred])))
         
         return prob_sum
 
-    def predict(self, X):
+    def predict(self, x):
         '''
         :features: vector representing features of a single instance
         '''
-        return np.argmax(self.bayes_predict(X))
+        return np.argmax(self.bayes_predict(x))
 
     def predict_all(self, x_list):
         pred = []
