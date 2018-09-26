@@ -6,7 +6,7 @@ see: scikit-learn
 '''
 from sklearn.mixture import GaussianMixture
 from collections import defaultdict
-from collections import Conuter
+from collections import Counter
 from models.GenericModel import Model
 import numpy as np
 
