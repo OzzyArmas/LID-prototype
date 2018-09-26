@@ -23,6 +23,8 @@ training_path = os.path.join(input_path, channel)
 
 logger = logging.getLogger('instance')
 lvl = logging.WARNING
+debug = False
+#load params
 
 def train(model, data_x, data_y):
     '''
@@ -44,17 +46,21 @@ def train(model, data_x, data_y):
 
     return model
 
-def get_data():
+def get_data(debug):
     '''
     '''
     data_y = {}
     data_x = []
     for idx, language in enumerate(os.listdir(training_path)):
         data_y[language[:-4]] = idx
-        data_x.append(pd.read_csv(os.path.join(training_path, language)).as_matrix())
+        if debug:
+            data_x.append(pd.read_csv(os.path.join(training_path, language)).as_matrix()[:750])
+        else:
+            data_x.append(pd.read_csv(os.path.join(training_path, language)).as_matrix())
 
     if len(data_x) == 0:
         raise Exception('no data was loaded')
+
     return (data_x, data_y)
         
     
@@ -80,6 +86,7 @@ def create_model(languages, training_params):
     it = training_params.get('iter', 100)
     snip = training_params.get('snippet_length', 75)
     languages = training_params.get('languages', languages)
+    debug = training_params.get('debug', False)
     logger.log(lvl, type(clusters))
     return gmm.GMM(clusters, covar, it, snip, languages)
 
@@ -87,9 +94,9 @@ if __name__ == '__main__':
     try:
         with open(param_path, 'r') as hyper:
             training_params = json.load(hyper)
-        
+
         # Array of data_x, and data_y values
-        data_x, data_y = get_data() 
+        data_x, data_y = get_data(debug) 
         logger.log(lvl, '[SUCCESS] data parsed')
 
         #create a model based on hyper_params
