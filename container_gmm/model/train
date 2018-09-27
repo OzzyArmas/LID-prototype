@@ -25,7 +25,7 @@ test_data = os.path.join(training_path, 'test')
 
 logger = logging.getLogger('instance')
 lvl = logging.WARNING
-debug = True
+debug = False
 #load params
 
 def eval(model):
