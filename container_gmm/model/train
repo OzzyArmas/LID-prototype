@@ -67,7 +67,7 @@ def get_data():
     '''
     '''
     global debug
-
+    logger.log(lvl, f'debug2: {debug}')
     data_y = {}
     data_x = []
     for idx, language in enumerate(os.listdir(train_data)):
@@ -113,11 +113,12 @@ if __name__ == '__main__':
     try:
         with open(param_path, 'r') as hyper:
             training_params = json.load(hyper)
+        
+        logger.log(lvl, f'debug : {debug}' )
 
         # Array of data_x, and data_y values
         data_x, data_y = get_data() 
         logger.log(lvl, '[SUCCESS] data parsed')
-
         #create a model based on hyper_params
         model = create_model(len(data_y), training_params)
         logger.log(lvl, '[SUCCESS] model created')
