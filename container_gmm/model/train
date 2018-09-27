@@ -29,9 +29,10 @@ debug = False
 #load params
 
 def eval(model):
-    global debug
     data_y = {}
     data_x = []
+    global debug
+
     for idx, language in enumerate(os.listdir(test_data)):
         data_y[language[:-4]] = idx
         if debug:
@@ -66,6 +67,7 @@ def get_data():
     '''
     '''
     global debug
+
     data_y = {}
     data_x = []
     for idx, language in enumerate(os.listdir(train_data)):
