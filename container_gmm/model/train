@@ -136,7 +136,7 @@ if __name__ == '__main__':
         logger.log(lvl, '[SUCCESS] model trained')
 
         #saves a checkpoint
-        save_model(model, 0)
+        save_model(model, {})
         logger.log(lvl, '[SUCCESS] checkpoint saved')
 
         #Tries test data to measure accuracy and evaluate model
