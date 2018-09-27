@@ -94,7 +94,7 @@ def save_model(model, acc):
         pickle.dump(model, out)
     
     for lang in acc:
-        acc[lang] = list(acc[lang])
+        acc[lang] = float(acc[lang])
     
     file_name = f'''accuracy.json'''
 
