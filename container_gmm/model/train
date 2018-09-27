@@ -133,7 +133,7 @@ if __name__ == '__main__':
 
         #Tries test data to measure accuracy and evaluate model
         acc = eval(model)
-        logg.log(lvl, f'[SUCCESS] acc: {acc}')
+        logger.log(lvl, f'[SUCCESS] acc: {acc}')
 
         #save model as a pickle
         save_model(model, acc)
