@@ -127,6 +127,10 @@ if __name__ == '__main__':
         model = train(model,data_x, data_y)
         logger.log(lvl, '[SUCCESS] model trained')
 
+        #saves a checkpoint
+        save_model(model, 0)
+        logger.log(lvl, '[SUCCESS] checkpoint saved')
+
         #Tries test data to measure accuracy and evaluate model
         acc = eval(model)
         logg.log(lvl, f'[SUCCESS] acc: {acc}')
