@@ -88,11 +88,19 @@ def save_model(model, acc):
     dump model to a pickle
     dump pickle on S3
     '''
-    file_name = f'''gmm_clust-{str(model.clusters)}_acc-{int(acc * 100)}.plk'''
+    file_name = f'''gmm_clust-{str(model.clusters)}.plk'''
 
     with open(os.path.join(model_path, file_name), 'wb') as out:
         pickle.dump(model, out)
     
+    for lang in acc:
+        acc[lang] = list(acc[lang])
+    
+    file_name = f'''accuracy.json'''
+
+    with open(os.path.join(model_path, file_name), 'w') as out:
+        json.dump(acc, out)
+
 def create_model(languages, training_params):
     '''
     read from parampath and figure out how to create model
