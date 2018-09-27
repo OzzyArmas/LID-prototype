@@ -95,6 +95,11 @@ class GMM(Model):
 
     def predict_all(self, x_list):
         pred = []
+        shape = np.shape(x_list)
+        if len(shape) < 3:
+            d0 = int(shape[0] - shape[0] % self.snippet_length)
+            x_list = x_list[:d0].reshape(
+                    [int(d0 / self.snippet_length), self.snippet_length, shape[2]])
         for x in x_list:
             pred.append(self.predict(x))
         return pred
