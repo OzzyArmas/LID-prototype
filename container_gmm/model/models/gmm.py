@@ -98,7 +98,7 @@ class GMM(Model):
         shape = np.shape(x_list)
         if len(shape) < 3:
             d0 = int(shape[0] - shape[0] % self.snippet_length)
-            x_list = x_list[:d0].reshape(
+            x_list = x_list[(shape[0] - d0):].reshape(
                     [int(d0 / self.snippet_length), self.snippet_length, shape[1]])
         for x in x_list:
             pred.append(self.predict(x))
