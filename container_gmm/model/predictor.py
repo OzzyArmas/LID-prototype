@@ -10,14 +10,16 @@ import StringIO
 import sys
 import signal
 import traceback
-
+import logging
 import flask
-
 import pandas as pd
+
+from models import gmm
 
 prefix = '/opt/ml/'
 model_path = os.path.join(prefix, 'model')
-
+logger = logging.getLogger('instance')
+lvl = logging.WARNING
 # A singleton for holding the model. This simply loads the model and holds it.
 # It has a predict function that does a prediction based on the model and the input data.
 
@@ -28,8 +30,10 @@ class ScoringService(object):
     def get_model(cls):
         """Get the model object for this instance, loading it if it's not already loaded."""
         if cls.model == None:
+            logger.log(lvl, 'trying to access model')
             with open(os.path.join(model_path, 'gmm_clust-[30,50].pkl'), 'r') as inp:
                 cls.model = pickle.load(inp)
+
         return cls.model
 
     @classmethod
@@ -49,7 +53,8 @@ def ping():
     """Determine if the container is working and healthy. In this sample container, we declare
     it healthy if we can load the model successfully."""
     health = ScoringService.get_model() is not None  # You can insert a health check here
-
+    if not health: 
+        logger.log(logging.ERROR , 'model not successfully loaded')
     status = 200 if health else 404
     return flask.Response(response='\n', status=status, mimetype='application/json')
 
