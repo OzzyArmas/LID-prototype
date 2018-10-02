@@ -11,10 +11,11 @@ from models.GenericModel import Model
 import numpy as np
 
 class GMM(Model):
-    def __init__(self, n_clusters = 30, cov_type='full', iter = 100, snippet_length=75, languages=2):
+    def __init__(self, n_clusters = 1024, cov_type='full', iter = 100, snippet_length=75, languages=2):
         '''        
-        :param n_clusters: total number of clusters to use for GMM, if different cluster sizes are needed, 
-        use [clusters1, clusters2, clusters3...] where the index of the cluster corresponds to the language index
+        :param n_clusters: total number of clusters to use for GMM, 
+            if different cluster sizes are needed, use [clusters1, clusters2, clusters3...] 
+            where the index of the cluster corresponds to the language index
         :param cov_type: type of covariance to use, default 'full'
         :param iter: maximum number of iterations for GMM to perform
         :param snippet_length: number of 10 ms mfcc steps to use for a sample
@@ -69,21 +70,25 @@ class GMM(Model):
 
         return cluster_dist
 
-    def bayes_predict(self, test_vec):
-        
+    def bayes_predict(self, x):
+        '''
+        :param x: sample audio to classify
+        :return: probability distribution that sample x belongs in a language
+        '''
         preds = []
         scores = []
 
         for gmm in self.gmm:
-            preds.append(gmm.predict(test_vec))
+            preds.append(gmm.predict(x))
             # score = log (P(vec| z, lang))
-            scores.append(gmm.score_samples(test_vec))
+            scores.append(gmm.score_samples(x))
 
 
         # sum(log(P(vec|z,lang)) + log(z|lang))
         prob_sum = []
         for pred,score,dist in zip(preds, scores, self.cluster_distributions):
-            prob_sum.append(np.sum(score) + np.sum(np.log([dist[cluster] for cluster in pred])))
+            prob_sum.append(np.sum(score) + \
+                np.sum(np.log([dist[cluster] for cluster in pred])))
         
         return prob_sum
 
@@ -94,26 +99,24 @@ class GMM(Model):
         return np.argmax(self.bayes_predict(x))
 
     def predict_all(self, x_list):
-        pred = []
+        '''
+        :param x_list: should be a 3 dimensional list containing
+        n by snippet_length by 39 vectors
+        where n is the number of samples of snippet_length * 10ms of audio
+
+        :return: an ndarray of all predictions
+        '''
         shape = np.shape(x_list)
+
+        # adjust x_list in case it's only 2 dimensions
         if len(shape) < 3:
             d0 = int(shape[0] - shape[0] % self.snippet_length)
-            x_list = x_list[(shape[0] - d0):].reshape(
-                    [int(d0 / self.snippet_length), self.snippet_length, shape[1]])
-        for x in x_list:
-            pred.append(self.predict(x))
-        return pred
-
-    def adjust_data_to_model(self, data):
-        '''
-        :param data: data to adjust to model expecting len(data)x3x75x13
-        :return: tuple of data with adjusted dimensions and it's new shape
-        '''
-        data_out = []
-        for vec in data:
-            vec = np.swapaxes(vec,0,1)
-            if not len(vec) < self.snippet_length:
-                vec = vec.reshape(self.snippet_length, np.shape(vec)[1] * np.shape(vec)[2])
-                data_out.append(vec)
-        shape = np.shape(data_out)
-        return data_out
+            
+            x_list = x_list[(shape[0] - d0):].reshape([
+                    int(d0 / self.snippet_length),
+                    self.snippet_length, 
+                    shape[1]])
+        
+        pred = [self.predict(x) for x in x_list]
+        
+        return np.array(pred)
