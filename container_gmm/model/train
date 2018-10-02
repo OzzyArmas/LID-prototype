@@ -58,12 +58,12 @@ def eval(model):
         if debug:
             data_x.append(
                 pd.read_csv(
-                    os.path.join(test_data, language) \
+                    os.path.join(test_data, language)
                     ).as_matrix()[:debug_length])
         else:
             data_x.append(
                 pd.read_csv(
-                    os.path.join(test_data, language) \
+                    os.path.join(test_data, language)
                     ).as_matrix())
 
     if len(data_x) == 0:
@@ -81,9 +81,9 @@ def train(model, data_x, data_y):
     :param data_x: x values to train GMM over, given the nature of the GMM,
         it can be fed all utterances as we are assuming they are all 
         indepedent of one another for this Naive Bayes model
-    :param data_y: labels corresponding to the which gmm 
+    :param data_y: labels corresponding to the which GMM 
         should be used to train this model
-    :return: a trained model containing all gmm
+    :return: a trained model containing all GMM
     '''
     #separate data into snippet_length samples
     #features_es.reshape((int(np.shape(features_es)[0] / sample_length), sample_length, -1))
@@ -103,17 +103,18 @@ def get_data():
     data_y = {}
     data_x = []
     for idx, language in enumerate(os.listdir(train_data)):
-        # files are currently saved as <language>.csv
+        # files are currently saved as <language>.csv, we save the language
+        # for legibility
         data_y[language[:-4]] = idx
         if debug:
             data_x.append(
                 pd.read_csv(
-                    os.path.join(train_data,language) \ 
+                    os.path.join(train_data,language)
                     ).as_matrix()[:debug_length])
         else:
             data_x.append(
                 pd.read_csv(
-                    os.path.join(train_data, language) \
+                    os.path.join(train_data, language)
                     ).as_matrix())
 
     if len(data_x) == 0:
@@ -199,6 +200,6 @@ if __name__ == '__main__':
         with open(os.path.join(output_path, 'failure'), 'w') as err:
             err.write('Exception during training: ' + str(e) + '\n' + trc)
             logger.log(lvl_e, 'Exception during training: ' + str(e) + '\n' + trc)
-
+        print('Exception during training: ' + str(e) + '\n' + trc)
         # A non-zero exit code causes the training job to be marked as Failed.
         sys.exit(255)
