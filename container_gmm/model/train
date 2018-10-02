@@ -72,7 +72,7 @@ def eval(model):
     #accuracy
     acc = {}
     for lang in data_y:
-        pred = model.predict_all(data_x[data_y[lang]])
+        pred = np.array(model.predict_all(data_x[data_y[lang]]))
         acc[lang] = np.average(pred == data_y[lang])
     return acc
 
