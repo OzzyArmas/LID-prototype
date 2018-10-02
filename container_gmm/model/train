@@ -158,10 +158,11 @@ def create_model(languages, training_params):
     if isinstance(clusters, str):
         clusters = ast.literal_eval(clusters)
     
+    # apparently hyperparms loves to give strings
     covar = training_params.get('cov_type', 'full')
-    it = training_params.get('iter', 100)
-    snip = training_params.get('snippet_length', 75)
-    languages = training_params.get('languages', languages)
+    it = int(training_params.get('iter', 100))
+    snip = int(training_params.get('snippet_length', 75))
+    languages = int(training_params.get('languages', languages))
     
     return gmm.GMM(clusters, covar, it, snip, languages)
 
