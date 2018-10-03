@@ -1,3 +1,6 @@
+import importlib
+import python_speech_features
+importlib.reload(python_speech_features)
 from python_speech_features import mfcc
 from python_speech_features import delta
 from python_speech_features import logfbank
@@ -16,22 +19,20 @@ def get_features(input_file, offset=time_offset, length=snippet_length):
         return None
     (rate, sig) = wav.read(input_file)
     features = mfcc(sig, rate)
-    delt = delta(features, 2)
-    deltdelt = delta(delt, 2)
+    #delt = delta(features, 2)
+    #deltdelt = delta(delt, 2)
 
-    print(np.shape(features))
     '''
     Mel Frequency Cepstral Coefficients and it's deltas
     TODO: look into shifted deltas (SDC)
+    '''
     
-    
-    return clean_samples(features, delt, 
-                        deltdelt,
+    return get_feature_deltas(features,
                         offset=time_offset, 
                         length=snippet_length)
-    '''
+    
 
-def clean_samples(features, delt, deltdelt, offset=time_offset, length=snippet_length):
+def get_feature_deltas(features, offset=time_offset, length=snippet_length):
     '''
     :param features: MFCC feature to get a snippet from
     :param delt: Delta features to get a snippet from
@@ -39,10 +40,15 @@ def clean_samples(features, delt, deltdelt, offset=time_offset, length=snippet_l
     :return: 3 x 13 array representing ceptral features for length ms of time or None if
     the length can't be met
     '''
-    features = features[offset:offset + length]
-    delt = delt[offset:offset + length]
-    deltdelt = deltdelt[offset:offset + length]
-    #return np.concatenate(([features], [delt], [deltdelt]), axis=0) if (len(features) == length) else  None
+    energy = features[:,0]
+    if offset or length:
+        features,energy = features[offset:offset + length,1:], features[offset:offset + length,0]
+    else:
+        features = features[:,1:]
+    
+    delt = delta(features,2)
+    deltdelt = delta(delt,2)
+    return (np.concatenate(([features], [delt], [deltdelt]), axis=0),energy) if (len(features) == length or not length) else  None
 
 def make_feature_set(file_list):
     '''
