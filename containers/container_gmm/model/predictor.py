@@ -5,12 +5,15 @@ from __future__ import print_function
 
 import os
 import json
+import logging
+logger = logging.getLogger('instance')
+lvl = logging.WARNING
+logger.log('script initialized')
 import pickle
 import StringIO
 import sys
 import signal
 import traceback
-import logging
 import flask
 import pandas as pd
 
@@ -18,9 +21,7 @@ from models import gmm
 
 prefix = '/opt/ml/'
 model_path = os.path.join(prefix, 'model')
-logger = logging.getLogger('instance')
-lvl = logging.WARNING
-logger.log('script initialized')
+
 # A singleton for holding the model. This simply loads the model and holds it.
 # It has a predict function that does a prediction based on the model and the input data.
 

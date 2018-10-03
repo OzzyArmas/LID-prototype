@@ -1,7 +1,9 @@
 '''
-name: GMM (Gaussian Mixeture Model)
+name: GMM (Gaussian Mixture Model)
 
-see: scikit-learn
+Abstract: 
+
+Author: Osvaldo Armas oosv@amazon.com
 
 '''
 from sklearn.mixture import GaussianMixture
