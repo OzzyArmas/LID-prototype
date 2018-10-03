@@ -38,7 +38,7 @@ lvl_e = logging.ERROR
 
 # this variable is used to check if training job
 # will run until completion only using about 10 samples
-debug = True
+debug = False
 debug_length = 2000
 
 # TODO: Think of a way to write this file only once
