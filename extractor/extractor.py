@@ -1,6 +1,3 @@
-'''
-make sure to download and import files for MFCC
-'''
 from python_speech_features import mfcc
 from python_speech_features import delta
 from python_speech_features import logfbank
@@ -22,15 +19,17 @@ def get_features(input_file, offset=time_offset, length=snippet_length):
     delt = delta(features, 2)
     deltdelt = delta(delt, 2)
 
+    print(np.shape(features))
     '''
     Mel Frequency Cepstral Coefficients and it's deltas
-    TODO: look into shifted deltas (SDS)
-    '''
+    TODO: look into shifted deltas (SDC)
+    
     
     return clean_samples(features, delt, 
                         deltdelt,
                         offset=time_offset, 
                         length=snippet_length)
+    '''
 
 def clean_samples(features, delt, deltdelt, offset=time_offset, length=snippet_length):
     '''
@@ -43,7 +42,7 @@ def clean_samples(features, delt, deltdelt, offset=time_offset, length=snippet_l
     features = features[offset:offset + length]
     delt = delt[offset:offset + length]
     deltdelt = deltdelt[offset:offset + length]
-    return np.concatenate(([features], [delt], [deltdelt]), axis=0) if (len(features) == length) else  None
+    #return np.concatenate(([features], [delt], [deltdelt]), axis=0) if (len(features) == length) else  None
 
 def make_feature_set(file_list):
     '''
