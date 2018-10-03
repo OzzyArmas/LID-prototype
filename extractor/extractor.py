@@ -9,7 +9,7 @@ import numpy as np
 
 time_offset = 24 # start at 25th frame
 snippet_length = 75 #75 ms snippet length
-
+energy_threshold = 12
 def get_features(input_file, offset=time_offset, length=snippet_length):
     '''
     :param input_file: input wave file to convert to to features
@@ -19,8 +19,6 @@ def get_features(input_file, offset=time_offset, length=snippet_length):
         return None
     (rate, sig) = wav.read(input_file)
     features = mfcc(sig, rate)
-    #delt = delta(features, 2)
-    #deltdelt = delta(delt, 2)
 
     '''
     Mel Frequency Cepstral Coefficients and it's deltas
@@ -46,8 +44,13 @@ def get_feature_deltas(features, offset=time_offset, length=snippet_length):
     else:
         features = features[:,1:]
     
+
+    for i,e in enumerate(energy):
+        if e < energy_threshold:
+           features[i] = np.zeros(np.shape(features[i]))
+      
     delt = delta(features,2)
-    deltdelt = delta(delt,2)
+    deltdelt = delta(delt,2)       
     return (np.concatenate(([features], [delt], [deltdelt]), axis=0),energy) if (len(features) == length or not length) else  None
 
 def make_feature_set(file_list):
