@@ -18,16 +18,16 @@ class LSTM(nn.Module, Model):
                 n_features = 39,
                 n_hidden = 512,
                 languages = 2, 
-                snippet_length = 75,
-                dropout=0.1,
-                bi_directional=False,
+                total_frames = 75,
+                dropout=None,
+                bidirectional=False,
                 num_layers = 1,
                 linear_layers = 1):
         '''
         :param n_features: number of features in a sample
         :param n_hidden: number of hidden dimensions to use
         :param languages: number of languages to score over
-        :param snippet_length: length of audio sample, sequence length
+        :param total_frames: length of audio sample, sequence length
         :param dropout: dropout rate to use
         '''
         super(LSTM, self).__init__()
@@ -42,15 +42,22 @@ class LSTM(nn.Module, Model):
         # number of languages to score, aka output dimension
         # the + 1 is to have a score for a language that is not
         # from the training set OR it's pure silence
-        self.n_languages = languages + 1
+        self.n_languages = languages
 
-        #lenght of audio snippet, aka sequence length
-        self.snippet_length = snippet_length
+        #lenght of audio frame, aka sequence length
+        self.total_frames = total_frames
 
         # use not yet implemented as it requires multiple LSTM layers
         self.dropout = dropout
-        # first linear layer which takes the input dimension and expands it
-        #self.layer_1 = nn.Linear(self.feature_dim, self.hidden_dim)
+
+        # number of lstm layers
+        self.num_layers = num_layers
+
+        # number of direction of lstm (1 or 2)
+        self.directions = 2 if bidirectional else 1
+
+        # BiLSTM
+        self.BiLSTM = bidirectional
         '''
         Currently activation functions are not being used, this may 
         change depending on performance, but choise of function is
@@ -59,12 +66,23 @@ class LSTM(nn.Module, Model):
         '''
         #Linear
         self.linear1 = nn.Linear(self.feature_dim, self.hidden_dim)
+        
+        #Rectifying Linear Unit
+        self.relu = nn.ReLU()
+        
+        #Sigmoid Function
+        self.sigmoid = nn.Sigmoid()
 
-        #LSTM step
-        if bi_directional:
-            self.lstm = nn.LSTM(self.hidden_dim, self.hidden_dim, batch_first = True) 
-        else:
-            self.lstm = nn.LSTM(self.hidden_dim, self.hidden_dim, batch_first = True) 
+        #definition of lstm
+
+        self.lstm = nn.LSTM(
+            self.hidden_dim, 
+            self.hidden_dim * self.directions, 
+            batch_first = True,
+            num_layers = self.num_layers,
+            bidirectional = self.BiLSTM) 
+        
+        #converts LSTM output to languages
         self.language_scores = nn.Linear(self.hidden_dim, self.n_languages)
         
         # defining other supporting forms of data, loss and optimizer should beå
@@ -75,11 +93,12 @@ class LSTM(nn.Module, Model):
         :param x_in: sample audio
         :return: scores for audio sample
         '''
-        shape = x_in.size()
+        
         # during the prediction step, the input dimensions will
-        # be snippet_length x n_features, the LSTM requires 3 dimensions
-        # thus we reshape the sample to 1 x snipet_length x n_features
-        # implicitly (in case sequence is shorter than snippet length)
+        # be total_frames x n_features, the LSTM requires 3 dimensions
+        # thus we reshape the sample to 1 x total_frames x n_features
+        # implicitly (in case sequence is shorter than frame length)
+        shape = x_in.size()
         if len(shape) < 3:
             x_in = x_in.reshape(1, shape[0], shape[1])
             shape = x_in.size()
@@ -88,16 +107,23 @@ class LSTM(nn.Module, Model):
         self.hidden = self.init_hidden()
         
         #input dimension listed before the function is executed
-        #batch_length x snipet_length x n_features
+        #batch_length x total_frames x n_features
         out = self.linear1(x_in)
         
-        #batch_length x snipet_length x n_hidden
+        #relu layer, does not affect shape
+        out = self.relu(out)
+        
+        #batch_length x total_frames x n_hidden
+    
         out, self.hidden = self.lstm(out.view([-1, out.size(1), out.size(2)] , self.hidden))
+        
+        #sigmoid activation
+        #out = self.sigmoid(out)
+        
+        #batch_length x 1 x n_hidden
+        languages = self.language_scores(out[:,-1])
 
-        #batch_length x snipet_length x n_hidden
-        languages = self.language_scores(out)
-
-        #batch_length x snipet_length x n_languages
+        #batch_length x 1 x n_languages
         return f.log_softmax(languages, dim=1)
 
 
@@ -105,8 +131,8 @@ class LSTM(nn.Module, Model):
         '''
         Initialize hidden state
         '''
-        return (torch.zeros(1, 1, self.hidden_dim),
-                torch.zeros(1, 1, self.hidden_dim))
+        return (torch.zeros(self.num_layers * self.directions, 1, self.hidden_dim),
+                torch.zeros(self.num_layers * self.directions, 1, self.hidden_dim))
 
 
     def train(self, training_set, language_idx, epoch=1, batch_size = 100, update=False):
@@ -114,13 +140,14 @@ class LSTM(nn.Module, Model):
         :param training_set: x_ins to train model over
         :param language_idx: language index corresponding to language model
         model assumes each utterance is independent of any other utterance,
-        where utterance is a 10ms snippet
+        where utterance is a 10ms frame
         '''
         # Assumed that data input is in array format and
         # converted to Tensor. If already tensor nothing changes
         training_set = torch.tensor(training_set)
         language_idx = torch.tensor(language_idx, dtype=torch.int64)
         
+        print(language_idx.size())
         # Data that's longer than the batch size could be padded,
         # instead we just disregard it
         # I will probably change that in the future
@@ -140,12 +167,12 @@ class LSTM(nn.Module, Model):
         
         # reshape input labels into batches
         # n_batches x batch_size x seq_length x 1 (language_id)
-        language_idx = torch.reshape(
-            language_idx,
-            [int(len(language_idx) / batch_size),
-                batch_size, 
-                language_idx.size(1), 
-                language_idx.size(2)])
+        # language_idx = torch.reshape(
+        #     language_idx,
+        #     [int(len(language_idx) / batch_size),
+        #         batch_size, 
+        #         language_idx.size(1), 
+        #         language_idx.size(2)])
         
         # initialize loss function and optimizer
         self.loss_function = nn.NLLLoss()
@@ -161,12 +188,11 @@ class LSTM(nn.Module, Model):
                 self.zero_grad()
                 
                 # this calls the forward function, through PyTorch
-                # output in shape batch_size x sequence_length x n_languages
+                # output in shape batch_size x 1 x n_languages
                 scores = self(x_in)
-                #scores = scores.view([scores.size(0) * scores.size(1), -1])
+                #print(scores.size())
                 # calculate backward loss, get perform gradient descent (ASGD)
-                loss = self.loss_function(scores[:,-1],language[:,-1].view(-1))
-                
+                loss = self.loss_function(scores,language.view(-1))
                 loss.backward()
                 self.optimizer.step()
 
@@ -177,6 +203,7 @@ class LSTM(nn.Module, Model):
             epoch_loss[e] = np.average(loss.data)   
         
         return loss_over_time, epoch_loss
+    
     def predict(self, X):
         '''
         :features: vector representing features of a single instance
