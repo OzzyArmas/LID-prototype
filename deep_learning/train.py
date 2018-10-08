@@ -76,7 +76,7 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
 
     return train_data_x, train_data_y
 
-def _get_test_data_loader(batch_size, training_dir, is_distributed, **kwargs):
+def _get_test_data_loader(batch_size, training_dir, **kwargs):
     '''
     '''
     logger.info("Get train data loader")
