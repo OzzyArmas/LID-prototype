@@ -25,7 +25,7 @@ import torch.nn.functional as f
 
 # important SageMaker predefined paths
 prefix = '/opt/ml/'
-input_path = prefix + 'input/data'
+input_path = prefix + 'input/data/'
 output_path = os.path.join(prefix, 'output')
 model_path = os.path.join(prefix, 'model')
 param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
@@ -38,10 +38,10 @@ model is currently set up to use FILE as there isn't
 incredibily large amounts of data yet. PIPE should most definitely 
 be used when training data exceeds 10 GB
 '''
-channel = 'training'
-training_path = os.path.join(input_path, channel)
-train_data = os.path.join(training_path, 'train')
-test_data = os.path.join(training_path, 'test')
+train_channel = 'training'
+training_path = os.path.join(input_path, train_channel)
+eval_channel = 'validation'
+eval_path = os.path.join(input_path, validation)
 
 logger = logging.getLogger('instance')
 lvl = logging.WARNING
@@ -52,8 +52,8 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     logger.info("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
-    train_data_x = np.load(os.path.join(training_path, 'train_x.npy' ))
-    train_data_y = np.load(os.path.join(training_path, 'train_y.npy' )) 
+    train_data_x = np.load(os.path.join(training_path, 'train_x_sm.npy' ))
+    train_data_y = np.load(os.path.join(training_path, 'train_y_sm.npy' )) 
     
     if is_distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
@@ -80,8 +80,8 @@ def _get_test_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     logger.info("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
-    test_data_x = np.load(os.path.join(training_path, 'test_x.npy' ))
-    test_data_y = np.load(os.path.join(training_path, 'test_y.npy' )) 
+    test_data_x = np.load(os.path.join(eval_path, 'test_x_sm.npy' ))
+    test_data_y = np.load(os.path.join(eval_path, 'test_y_sm.npy' )) 
     
     if is_distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
