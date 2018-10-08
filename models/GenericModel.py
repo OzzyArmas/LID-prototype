@@ -1,9 +1,4 @@
 class Model:
-    def __init__(self):
-        '''
-        init model
-        '''
-        pass
     def train(self, x, y):
         '''
         train model on feature set x with labels y

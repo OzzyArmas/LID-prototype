@@ -20,10 +20,6 @@ def get_features(input_file):
     (rate, sig) = wav.read(input_file)
     features = mfcc(sig, rate)
 
-    '''
-    Mel Frequency Cepstral Coefficients and it's deltas
-    TODO: look into shifted deltas (SDC)
-    '''
     features = get_clean_deltas(features)
     return features
 
@@ -36,7 +32,6 @@ def clean_up(features):
         it has as many frames as total_frames
     '''
     count_frames = 0
-    frames_total = total_frames
     start_frame = -1
     for frame,feature in enumerate(features):
         if not feature.all():
@@ -47,8 +42,8 @@ def clean_up(features):
             count_frames += 1
         if count_frames == total_frames:
             break
-    if start_frame > 0:
-        features[start_frame:start_frame + frames_total]
+    if start_frame > -1:
+        return features[start_frame:start_frame + total_frames]
     return None
 
 def get_clean_deltas(features):
@@ -78,13 +73,16 @@ def get_clean_deltas(features):
         return None
     
     else:
+        # delta
         delt = delta(features,2)
+        # get double delta
         deltdelt = delta(delt,2)
+        # return total_frames x 3 features
         return np.concatenate((
-            [features],
-            [delt], 
-            [deltdelt]), 
-            axis=0)     
+                [features],
+                [delt], 
+                [deltdelt]), 
+                axis=0)#note enerhy is a separate output      
 
 def make_feature_set(file_list):
     '''
@@ -93,12 +91,12 @@ def make_feature_set(file_list):
     '''   
     feature_set = []
     rejected = []
-    for input_file in enumerate(file_list):
+    for idx, input_file in enumerate(file_list):
         feat = get_features(input_file)
         if feat is not None:
             feat = np.swapaxes(feat, 0, 1)
             feature_set.append(feat.tolist())
         else:
-            
-    return feature_set
+            rejected.append(idx)
+    return feature_set, rejected
 
