@@ -40,7 +40,8 @@ class LSTM(nn.Module):
 
         # number of features, aka input dimension
         self.feature_dim = n_features
-        
+        print(self.feature_dim)
+        print(self.hidden_dim)
         # number of languages to score, aka output dimension
         # the + 1 is to have a score for a language that is not
         # from the training set OR it's pure silence

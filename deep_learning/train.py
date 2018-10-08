@@ -66,7 +66,7 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
                                        sampler=train_sampler,
                                        **kwargs)
 
-    train_data_y torch.utils.data.DataLoader(train_data_y, 
+    train_data_y = torch.utils.data.DataLoader(train_data_y, 
                                        batch_size=batch_size, 
                                        shuffle=False,
                                        sampler=train_sampler,
@@ -74,7 +74,7 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
 
     return train_data_x, train_data_y
 
-def _get_test_data_loader(batch, dir, distributed, **kwargs):
+def _get_test_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     '''
     '''
     logger.info("Get train data loader")
@@ -94,13 +94,13 @@ def _get_test_data_loader(batch, dir, distributed, **kwargs):
                                        sampler=train_sampler,
                                        **kwargs)
 
-    test_data_y torch.utils.data.DataLoader(test_data_y, 
+    test_data_y = torch.utils.data.DataLoader(test_data_y, 
                                        batch_size=batch_size, 
                                        shuffle=False,
                                        sampler=train_sampler,
                                        **kwargs)
          
-    return train_data_x, train_data_y
+    return test_data_x, test_data_y
 
 
 def train(args, model_params):
@@ -134,11 +134,9 @@ def train(args, model_params):
 
     train_x, train_y = _get_train_data_loader(args.batch_size, 
                                         args.data_dir, 
-                                        is_distributed,
-                                        **kwargs)
+                                        is_distributed)
     test_x, test_y = _get_test_data_loader(args.test_batch_size, 
-                                        args.data_dir,
-                                        **kwargs)
+                                        args.data_dir)
     model = create_model(model_params, device)
     
     if is_distributed and use_cuda:
@@ -151,8 +149,7 @@ def train(args, model_params):
     
     loss_function = nn.NLLLoss()
     optimizer = optim.Adam(model.parameters(),
-                        lr=args.lr,
-                        momentum=args.momentum)
+                        lr=args.lr)
     
     for epoch in range(1, args.epochs + 1):
         model.train()
@@ -228,19 +225,15 @@ def create_model(model_params, device='cpu'):
             linear_layers = 1)
     :return: a LSTM model object containing a lstm per language
     '''    
-    # the json file may convert the array given in the hyperparams json into a 
-    # a string, so this is just to circumvent that problem
-    if isinstance(clusters, str):
-        clusters = ast.literal_eval(clusters)
-    
-    # apparently hyperparms loves to give strings, thus int conversions
-    n_features      =   int(model_params.get('n_features', 39)),
+    # apparently hyperparams loves to give strings, thus int conversions
+    n_features      =   int(model_params.get('n_features', 39))
     n_hidden        =   int(model_params.get('n_hidden', 512))
     languages       =   int(model_params.get('languages', 2)) 
     snippet_length  =   int(model_params.get('snippet_length', 75))
     dropout         =   int(model_params.get('dropout', 0.0))
     num_lstm_layers =   int(model_params.get('num_layers', 1))
     bidirectional   =   bool(model_params.get('bidirectional', False))
+    num_linear      =   int(model_params.get('num_linear', 1))
 
     # if there is a gpu, the LSTM will take care of checking for that during training
     return lstm.LSTM(
@@ -250,7 +243,8 @@ def create_model(model_params, device='cpu'):
         snippet_length,
         dropout,
         bidirectional,
-        num_lstm_layers
+        num_lstm_layers,
+        num_linear
     ).to(device)
 
 def save_model(model, model_dir):

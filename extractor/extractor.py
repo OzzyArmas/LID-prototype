@@ -33,15 +33,19 @@ def clean_up(features):
     '''
     count_frames = 0
     start_frame = -1
+    
     for frame,feature in enumerate(features):
         if not feature.all():
             continue
+        
         else:
             if start_frame == -1:
                 start_frame = frame
             count_frames += 1
+        
         if count_frames == total_frames:
             break
+    
     if start_frame > -1:
         return features[start_frame:start_frame + total_frames]
     return None
