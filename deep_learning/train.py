@@ -40,7 +40,7 @@ be used when training data exceeds 10 GB
 train_channel = 'training'
 training_path = os.path.join(input_path, train_channel)
 eval_channel = 'validation'
-eval_path = os.path.join(input_path, validation)
+eval_path = os.path.join(input_path, eval_channel)
 
 logger = logging.getLogger('instance')
 lvl = logging.WARNING
