@@ -6,14 +6,16 @@ Abstract:
 Author: Osvaldo Armas oosv@amazon.com
 
 '''
-from models.GenericModel import Model
 import numpy as np
-import torch.nn as nn
-import torch.nn.functional as f
-import torch
-import torch.optim as optim
+import traceback
 
-class LSTM(nn.Module, Model):
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as f
+
+
+class LSTM(nn.Module):
     def __init__(self,
                 n_features = 39,
                 n_hidden = 512,
@@ -58,18 +60,38 @@ class LSTM(nn.Module, Model):
 
         # BiLSTM
         self.BiLSTM = bidirectional
+
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         '''
         Currently activation functions are not being used, this may 
         change depending on performance, but choise of function is
         very important in this particular problem, an alternate
         solution is to create an embedding for the cepstral coefficients
         '''
-        #Linear
+        #Linear 1
         self.linear1 = nn.Linear(self.feature_dim, self.hidden_dim)
         
         #Rectifying Linear Unit
-        self.relu = nn.ReLU()
+        self.relu1 = nn.ReLU()
         
+        # #Linear 2
+        # self.linear2 = nn.Linear(self.hidden_dim, self.feature_dim)
+
+        # #ReLU 2
+        # self.relu2 = nn.ReLU()
+
+        # #Linear 3
+        # self.linear3 = nn.Linear(self.hidden_dim, self.feature_dim)
+
+        # #ReLU 3
+        # self.relu3 = nn.ReLU()
+
+        # #Linear 4
+        # self.linear4 = nn.Linear(self.hidden_dim, self.feature_dim)
+
+        # #ReLU 4
+        # self.relu4 = nn.ReLU()
+
         #Sigmoid Function
         self.sigmoid = nn.Sigmoid()
 
@@ -111,8 +133,16 @@ class LSTM(nn.Module, Model):
         out = self.linear1(x_in)
         
         #relu layer, does not affect shape
-        out = self.relu(out)
-        
+        out = self.relu1(out)
+
+        # same as before for three stacked layers
+        # out = self.linear2(x_in)
+        # out = self.relu(out)
+        # out = self.linear3(x_in)
+        # out = self.relu(out)
+        # out = self.linear4(x_in)
+
+
         #batch_length x total_frames x n_hidden
     
         out, self.hidden = self.lstm(out.view([-1, out.size(1), out.size(2)] , self.hidden))
@@ -132,85 +162,17 @@ class LSTM(nn.Module, Model):
         Initialize hidden state
         '''
         return (torch.zeros(self.num_layers * self.directions, 1, self.hidden_dim),
-                torch.zeros(self.num_layers * self.directions, 1, self.hidden_dim))
-
-
-    def train(self, training_set, language_idx, epoch=1, batch_size = 100, update=False):
-        '''
-        :param training_set: x_ins to train model over
-        :param language_idx: language index corresponding to language model
-        model assumes each utterance is independent of any other utterance,
-        where utterance is a 10ms frame
-        '''
-        # Assumed that data input is in array format and
-        # converted to Tensor. If already tensor nothing changes
-        training_set = torch.tensor(training_set)
-        language_idx = torch.tensor(language_idx, dtype=torch.int64)
-        
-        print(language_idx.size())
-        # Data that's longer than the batch size could be padded,
-        # instead we just disregard it
-        # I will probably change that in the future
-        extra_data = training_set.size(0) % batch_size
-        if extra_data:
-            training_set = training_set[:len(training_set) - extra_data]
-            language_idx = language_idx[:len(language_idx) - extra_data]
-
-        # reshape input array into batches
-        # n_batches x batch_size x seq_length x n_features 
-        training_set = torch.reshape(
-            training_set,
-            [int(len(training_set) / batch_size),
-                batch_size, 
-                training_set.size(1), 
-                training_set.size(2)])
-        
-        # reshape input labels into batches
-        # n_batches x batch_size x seq_length x 1 (language_id)
-        # language_idx = torch.reshape(
-        #     language_idx,
-        #     [int(len(language_idx) / batch_size),
-        #         batch_size, 
-        #         language_idx.size(1), 
-        #         language_idx.size(2)])
-        
-        # initialize loss function and optimizer
-        self.loss_function = nn.NLLLoss()
-        self.optimizer = optim.ASGD(self.parameters(), lr=0.5)
-        
-        # 
-        loss_over_time = []
-        epoch_loss = {}
-        for e in range(epoch):
-            for x_in, language in zip(training_set, language_idx):
-                # zero_grad prevents training a new batch
-                # on the last batch's gradient
-                self.zero_grad()
-                
-                # this calls the forward function, through PyTorch
-                # output in shape batch_size x 1 x n_languages
-                scores = self(x_in)
-                #print(scores.size())
-                # calculate backward loss, get perform gradient descent (ASGD)
-                loss = self.loss_function(scores,language.view(-1))
-                loss.backward()
-                self.optimizer.step()
-
-                # for visualizing loss over time                
-                loss_over_time.append(loss)
-                if update:
-                    print(f'loss: {loss.data}, epoch: {e} iter: {len(loss_over_time)}')
-            epoch_loss[e] = np.average(loss.data)   
-        
-        return loss_over_time, epoch_loss
+                torch.zeros(self.num_layers * self.directions, 1, self.hidden_dim))        
     
-    def predict(self, X):
+    def predict(self, x):
         '''
         :features: vector representing features of a single instance
         '''
+        super(LSTM, self).eval()
         #May have to convert X to tensors
-        X = torch.tensor(X)
-        return self(X)
+        with torch.no_grad():
+            x = torch.tensor(x, dtype=torch.float32)
+            return np.argmax(self.forward(x).numpy())
 
     def predict_all(self, x_list):
         '''
@@ -220,12 +182,3 @@ class LSTM(nn.Module, Model):
         for x in x_list:
             pred.append(self.predict(x))
         return pred
-
-    def adjust_data_to_model(self, data):
-        '''
-        :param data: data to adjust to model expecting len(data)x3x75x13
-        :return: tuple of data with adjusted dimensions and it's new shape
-        '''
-        return data
-
-    
