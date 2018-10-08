@@ -37,17 +37,19 @@ def clean_up(features):
     '''
     count_frames = 0
     frames_total = total_frames
-    start_frame = None
+    start_frame = -1
     for frame,feature in enumerate(features):
         if not feature.all():
             continue
         else:
-            if start_frame == None:
+            if start_frame == -1:
                 start_frame = frame
             count_frames += 1
         if count_frames == total_frames:
             break
-    return features[start_frame:start_frame + frames_total]
+    if start_frame > 0:
+        features[start_frame:start_frame + frames_total]
+    return None
 
 def get_clean_deltas(features):
     '''
@@ -70,19 +72,19 @@ def get_clean_deltas(features):
      
     features = clean_up(features)
     
-    delt = delta(features,2)
-    deltdelt = delta(delt,2)
     # check that features are at least as long
     # as the length required
-    if len(features) >= total_frames:
-        return (np.concatenate((
+    if features is None or len(features) < total_frames:
+        return None
+    
+    else:
+        delt = delta(features,2)
+        deltdelt = delta(delt,2)
+        return np.concatenate((
             [features],
             [delt], 
             [deltdelt]), 
-            axis=0), energy) #note enerhy is a separate output
-    else:
-        # return None if file is shorter than snippet
-        return (None, None)      
+            axis=0)     
 
 def make_feature_set(file_list):
     '''
@@ -90,11 +92,13 @@ def make_feature_set(file_list):
     :returns:
     '''   
     feature_set = []
-    for input_file in file_list:
-        feat = get_features(input_file)[0]
+    rejected = []
+    for input_file in enumerate(file_list):
+        feat = get_features(input_file)
         if feat is not None:
             feat = np.swapaxes(feat, 0, 1)
             feature_set.append(feat.tolist())
-    
+        else:
+            
     return feature_set
 
