@@ -84,11 +84,6 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
     # Pre shuffled data, x and y indeces matching
     test_data_x = np.load(os.path.join(eval_path, 'test_x_sm.npy' ))
     test_data_y = np.load(os.path.join(eval_path, 'test_y_sm.npy' )) 
-    
-    if is_distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
-    else:
-        train_sampler = None
 
     test_data_x = torch.utils.data.DataLoader(test_data_x, 
                                        batch_size=batch_size, 
