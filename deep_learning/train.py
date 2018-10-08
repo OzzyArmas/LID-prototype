@@ -5,8 +5,10 @@ from models import lstm
 
 # Important external libraries
 import numpy as np
-import argparse
+import sagemaker_containers
 # built-in libraries
+ 
+import argparse
 import os
 import traceback
 import sys
