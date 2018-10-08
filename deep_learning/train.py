@@ -88,13 +88,11 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
     test_data_x = torch.utils.data.DataLoader(test_data_x, 
                                        batch_size=batch_size, 
                                        shuffle=False,
-                                       sampler=train_sampler,
                                        **kwargs)
 
     test_data_y = torch.utils.data.DataLoader(test_data_y, 
                                        batch_size=batch_size, 
                                        shuffle=False,
-                                       sampler=train_sampler,
                                        **kwargs)
          
     return test_data_x, test_data_y
@@ -260,7 +258,7 @@ if __name__ == '__main__':
         # Data and model checkpoints directories
         parser.add_argument('--batch-size', type=int, default=100, metavar='N',
                             help='input batch size for training (default: 64)')
-        parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
+        parser.add_argument('--test-batch-size', type=int, default=100, metavar='N',
                             help='input batch size for testing (default: 1000)')
         parser.add_argument('--epochs', type=int, default=2, metavar='N',
                             help='number of epochs to train (default: 10)')
