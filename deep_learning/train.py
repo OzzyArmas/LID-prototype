@@ -4,7 +4,6 @@
 from models import lstm
 
 # Important external libraries
-import pandas as pd
 import numpy as np
 
 # built-in libraries
