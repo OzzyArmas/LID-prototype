@@ -177,8 +177,8 @@ def train(args, model_params):
             # update logging information
             if batch_idx % args.log_interval == 0:
                 logger.info('Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
-                    epoch, batch_idx * len(data), len(train_loader.sampler),
-                    100. * batch_idx / len(train_loader), loss.item()))
+                    epoch, batch_idx * len(feature_seq), len(train_x.sampler),
+                    100. * batch_idx / len(train_x.sampler), loss.item()))
         
         test(model, test_x, test_y, device)
         
