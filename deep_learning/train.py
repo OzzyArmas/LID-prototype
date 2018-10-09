@@ -24,6 +24,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.utils.data
+import torch.utils.data.distributed
 import torch.distributed as dist
 
 # important SageMaker predefined paths
