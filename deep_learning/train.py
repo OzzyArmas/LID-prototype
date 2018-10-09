@@ -197,10 +197,10 @@ def test(model, test_x, test_y, device):
             pred = output.max(1, keepdim=True)[1]
             correct += pred.eq(target.view_as(pred)).sum().item()
 
-    test_loss /= len(test_loader.dataset)
+    test_loss /= len(test_x)
     logger.info('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))    
+        test_loss, correct, len(test_x),
+        100. * correct / len(test_x)))    
     
 def _average_gradients(model):
     # Gradient averaging.
