@@ -80,7 +80,7 @@ class MixedLSTM(nn.Module):
         # definition of lstm
         self.lstm = nn.LSTM(
             input_size = self.hidden_dim, 
-            hidden_size = self.hidden_dim * (self.BiLSTM << 1),
+            hidden_size = self.hidden_dim // (self.BiLSTM << 1),
             batch_first = True,
             num_layers = self.num_layers,
             bidirectional = self.BiLSTM,
@@ -137,10 +137,10 @@ class MixedLSTM(nn.Module):
         Initialize hidden state
         '''
         return (torch.zeros(
-                    self.num_layers * (self.BiLSTM << 1),
+                    self.num_layers // (self.BiLSTM << 1),
                     1, self.hidden_dim),
                 torch.zeros(
-                    self.num_layers *  (self.BiLSTM << 1),
+                    self.num_layers //  (self.BiLSTM << 1),
                     1, self.hidden_dim))        
     
     def predict(self, x):
