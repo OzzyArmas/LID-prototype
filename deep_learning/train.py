@@ -100,7 +100,7 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
     return test_data_x, test_data_y
 
 
-def train(args, model_params):
+def train(args):
     
     # Get parameters provided by SageMaker
     is_distributed = len(args.hosts) > 1 and args.backend is not None
