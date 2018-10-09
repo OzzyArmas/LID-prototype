@@ -54,8 +54,8 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     logger.warning("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
-    train_data_x = np.load(os.path.join(training_path, 'train_x.npy' ))
-    train_data_y = np.load(os.path.join(training_path, 'train_y.npy' )) 
+    train_data_x = np.load(os.path.join(training_path, 'train_x_sm.npy' ))
+    train_data_y = np.load(os.path.join(training_path, 'train_y_sm.npy' )) 
     train_data_x = torch.tensor(train_data_x, dtype=torch.float32)
     train_data_y = torch.tensor(train_data_y, dtype=torch.int64)
 
@@ -88,8 +88,8 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
     logger.warning("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
-    test_data_x = np.load(os.path.join(eval_path, 'test_x.npy' ))
-    test_data_y = np.load(os.path.join(eval_path, 'test_y.npy' )) 
+    test_data_x = np.load(os.path.join(eval_path, 'test_x_sm.npy' ))
+    test_data_y = np.load(os.path.join(eval_path, 'test_y_sm.npy' )) 
     test_data_x = torch.tensor(test_data_x, dtype=torch.float32)
     test_data_y = torch.tensor(test_data_y, dtype=torch.int64)
 
@@ -214,7 +214,12 @@ def test(model, test_x, test_y, device):
     test_loss /= len(test_x)
     logger.warning('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_x),
-        100. * correct / len(test_x)))    
+        100. * correct / len(test_x)))
+    
+    file_name = 'accuracy.json'
+    acc = {'test_loss' : test_loss, 'acc' : correct/len(test_x)}
+    with open(os.path.join(model_path, file_name), 'w') as out:
+        json.dump(acc, out)    
     
 def _average_gradients(model):
     # Gradient averaging.
