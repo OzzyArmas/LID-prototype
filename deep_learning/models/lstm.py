@@ -3,6 +3,8 @@ name: LSTM, Long-Short Term Memory
 
 Abstract: 
 
+Mixed LSTM model allowing for linear layers to be added before LSTM
+
 Author: Osvaldo Armas oosv@amazon.com
 
 '''
@@ -14,8 +16,9 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as f
 
+from collections import OrderedDict
 
-class LSTM(nn.Module):
+class MixedLSTM(nn.Module):
     def __init__(self,
                 n_features = 39,
                 n_hidden = 512,
@@ -32,7 +35,7 @@ class LSTM(nn.Module):
         :param total_frames: length of audio sample, sequence length
         :param dropout: dropout rate to use
         '''
-        super(LSTM, self).__init__()
+        super(MixedLSTM, self).__init__()
 
         # number of hidden dimensions, could be more complex
         # but we maintain the same number in all layers
@@ -42,11 +45,9 @@ class LSTM(nn.Module):
         self.feature_dim = n_features
         
         # number of languages to score, aka output dimension
-        # the + 1 is to have a score for a language that is not
-        # from the training set OR it's pure silence
         self.n_languages = languages
 
-        #lenght of audio frame, aka sequence length
+        # lenght of audio frame, aka sequence length
         self.total_frames = total_frames
 
         # use not yet implemented as it requires multiple LSTM layers
@@ -55,54 +56,35 @@ class LSTM(nn.Module):
         # number of lstm layers
         self.num_layers = num_layers
 
-        # number of direction of lstm (1 or 2)
-        self.directions = 2 if bidirectional else 1
-
         # BiLSTM
         self.BiLSTM = bidirectional
 
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        '''
-        Currently activation functions are not being used, this may 
-        change depending on performance, but choise of function is
-        very important in this particular problem, an alternate
-        solution is to create an embedding for the cepstral coefficients
-        '''
-        #Linear 1
-        self.linear1 = nn.Linear(self.feature_dim, self.hidden_dim)
+        # Main Linear Layer
+        self.linear_main= nn.Linear(self.feature_dim, self.hidden_dim)
         
-        #Rectifying Linear Unit
-        self.relu1 = nn.ReLU()
+        # Add Sequential layers for NN using and OrderedDict
+        layers = OrderedDict()
+        for layer in range(linear_layers - 1):
+            layers['layer_' + str(layer)] = nn.Linear(self.hidden_dim,
+                                                    self.hidden_dim)
+            layers['relu_' + str(layer)] = nn.ReLU()
         
-        # #Linear 2
-        # self.linear2 = nn.Linear(self.hidden_dim, self.feature_dim)
-
-        # #ReLU 2
-        # self.relu2 = nn.ReLU()
-
-        # #Linear 3
-        # self.linear3 = nn.Linear(self.hidden_dim, self.feature_dim)
-
-        # #ReLU 3
-        # self.relu3 = nn.ReLU()
-
-        # #Linear 4
-        # self.linear4 = nn.Linear(self.hidden_dim, self.feature_dim)
-
-        # #ReLU 4
-        # self.relu4 = nn.ReLU()
-
-        #Sigmoid Function
-        self.sigmoid = nn.Sigmoid()
-
-        #definition of lstm
-
+        if len(layers) > 0:
+            self.sequential = nn.Sequential(layers)
+        else:
+            self.sequential = None
+        
+        # Rectifying Linear Unit
+        self.relu_main = nn.ReLU()
+        
+        # definition of lstm
         self.lstm = nn.LSTM(
-            self.hidden_dim, 
-            self.hidden_dim * self.directions, 
+            input_size = self.hidden_dim, 
+            hidden_size = self.hidden_dim * (self.BiLSTM << 1),
             batch_first = True,
             num_layers = self.num_layers,
-            bidirectional = self.BiLSTM) 
+            bidirectional = self.BiLSTM
+            dropout = self.dropout) 
         
         #converts LSTM output to languages
         self.language_scores = nn.Linear(self.hidden_dim, self.n_languages)
@@ -125,35 +107,28 @@ class LSTM(nn.Module):
             x_in = x_in.reshape(1, shape[0], shape[1])
             shape = x_in.size()
 
-        #Make sure previous state does not affect next state
+        # Make sure previous state does not affect next state
         self.hidden = self.init_hidden()
         
-        #input dimension listed before the function is executed
-        #batch_length x total_frames x n_features
-        out = self.linear1(x_in)
+        # input dimension listed before the function is executed
+        # batch_length x total_frames x n_features
+        out = self.linear_main(x_in)
         
-        #relu layer, does not affect shape
-        out = self.relu1(out)
-
-        # same as before for three stacked layers
-        # out = self.linear2(x_in)
-        # out = self.relu(out)
-        # out = self.linear3(x_in)
-        # out = self.relu(out)
-        # out = self.linear4(x_in)
-
-
-        #batch_length x total_frames x n_hidden
-    
-        out, self.hidden = self.lstm(out.view([-1, out.size(1), out.size(2)] , self.hidden))
+        if self.sequential:
+            out = self.sequential(out)
         
-        #sigmoid activation
-        #out = self.sigmoid(out)
+        # relu layer, does not affect shape
+        # but input is batch_length  x total_frames x n_hidden
+        out = self.relu_main(out)
+
+        # batch_length x total_frames x n_hidden
+        out, self.hidden = self.lstm(out.view([-1, out.size(1), out.size(2)],
+                                                                 self.hidden))
         
-        #batch_length x 1 x n_hidden
+        # batch_length x 1 x n_hidden, only use scores from last state
         languages = self.language_scores(out[:,-1])
 
-        #batch_length x 1 x n_languages
+        # batch_length x 1 x n_languages
         return f.log_softmax(languages, dim=1)
 
 
@@ -161,15 +136,19 @@ class LSTM(nn.Module):
         '''
         Initialize hidden state
         '''
-        return (torch.zeros(self.num_layers * self.directions, 1, self.hidden_dim),
-                torch.zeros(self.num_layers * self.directions, 1, self.hidden_dim))        
+        return (torch.zeros(
+                    self.num_layers * (self.BiLSTM << 1),
+                    1, self.hidden_dim),
+                torch.zeros(
+                    self.num_layers *  (self.BiLSTM << 1),
+                    1, self.hidden_dim))        
     
     def predict(self, x):
         '''
         :features: vector representing features of a single instance
         '''
-        super(LSTM, self).eval()
-        #May have to convert X to tensors
+        super(MixedLSTM, self).eval()
+        # May have to convert X to tensors
         with torch.no_grad():
             x = torch.tensor(x, dtype=torch.float32)
             return np.argmax(self.forward(x).numpy())

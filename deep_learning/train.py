@@ -136,7 +136,17 @@ def train(args, model_params):
                                         is_distributed)
     test_x, test_y = _get_test_data_loader(args.test_batch_size, 
                                         args.data_dir)
-    model = create_model(model_params, device)
+    
+    model = lstm.MixedLSTM(
+                    n_features = args.n_features, 
+                    n_hidden = args.n_hidden, 
+                    languages = args.languages,
+                    total_frames = args.frames, 
+                    dropout = args.dropout, 
+                    bidirectional = args.bidirectional,
+                    num_layers = args.num_layers,
+                    linear_layers = args.linear_layers
+                    ).to(device)
     
     if is_distributed and use_cuda:
         # multi-machine multi-gpu case
@@ -209,43 +219,6 @@ def _average_gradients(model):
         dist.all_reduce(param.grad.data, op=dist.reduce_op.SUM, group=0)
         param.grad.data /= size
 
-def create_model(model_params, device='cpu'):
-    '''
-    :param languages: languages to train lstm over
-    :param model_params: parameters to use for training LSTM
-        defaults:
-            n_features = 39,
-            n_hidden = 512,
-            languages = 2, 
-            snippet_length = 75,
-            dropout=0.0,
-            bi_directional=False,
-            num_layers = 1,
-            linear_layers = 1)
-    :return: a LSTM model object containing a lstm per language
-    '''    
-    # apparently hyperparams loves to give strings, thus int conversions
-    n_features      =   int(model_params.get('n_features', 39))
-    n_hidden        =   int(model_params.get('n_hidden', 512))
-    languages       =   int(model_params.get('languages', 2)) 
-    snippet_length  =   int(model_params.get('snippet_length', 75))
-    dropout         =   int(model_params.get('dropout', 0.0))
-    num_lstm_layers =   int(model_params.get('num_layers', 1))
-    bidirectional   =   bool(model_params.get('bidirectional', False))
-    num_linear      =   int(model_params.get('num_linear', 1))
-
-    # if there is a gpu, the LSTM will take care of checking for that during training
-    return lstm.LSTM(
-        n_features,
-        n_hidden,
-        languages,
-        snippet_length,
-        dropout,
-        bidirectional,
-        num_lstm_layers,
-        num_linear
-    ).to(device)
-
 def save_model(model, model_dir):
     logger.info("Saving the model.")
     path = os.path.join(model_dir, 'model.pth')
@@ -253,13 +226,9 @@ def save_model(model, model_dir):
 
 if __name__ == '__main__':
     try:
-
-        with open(param_path, 'r') as hyper:
-            model_params = json.load(hyper)
-        
         parser = argparse.ArgumentParser()
-
-        # Data and model checkpoints directories
+        
+        # Data and Training information
         parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                             help='input batch size for training (default: 64)')
         parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
@@ -276,6 +245,24 @@ if __name__ == '__main__':
                             help='how many batches to wait before logging training status')
         parser.add_argument('--backend', type=str, default=None,
                             help='backend for distributed training (tcp, gloo on cpu and gloo, nccl on gpu)')
+        
+        # Model Specific Details
+        parser.add_argument('--n_features', type=int, default=39,
+                            help='number of features')
+        parser.add_argument('--n_hidden', type=int, default=512,
+                            help='number of hidden layers')
+        parser.add_argument('--languages', type=int, default=2,
+                            help='number of languages to learn')
+        parser.add_argument('--frames', type=int, default=150,
+                            help='total frames per sample/utterance')
+        parser.add_argument('--dropout', type=float, default=None,
+                            help='desired dropout')
+        parser.add_argument('--num_layers', type=int, default=1,
+                            help='total number of lstm layers')
+        parser.add_argument('--bidirectional', type=bool, default=False,
+                            help='use bidirectional lstm')
+        parser.add_argument('--linear_layers', type=int, default=1,
+                            help='number of linear layers')
 
         # Container environment
         env = sagemaker_containers.training_env()
@@ -286,7 +273,7 @@ if __name__ == '__main__':
                             default=env.channel_input_dirs['training'])
         parser.add_argument('--num-gpus', type=int, default=env.num_gpus)
         
-        train(parser.parse_args(), model_params)
+        train(parser.parse_args())
 
     except Exception as e:
         trc = traceback.format_exc()
