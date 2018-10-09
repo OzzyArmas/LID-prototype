@@ -54,8 +54,8 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     logger.info("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
-    train_data_x = np.load(os.path.join(training_path, 'train_x_sm.npy' ))
-    train_data_y = np.load(os.path.join(training_path, 'train_y_sm.npy' )) 
+    train_data_x = np.load(os.path.join(training_path, 'train_x.npy' ))
+    train_data_y = np.load(os.path.join(training_path, 'train_y.npy' )) 
     train_data_x = torch.tensor(train_data_x, dtype=torch.float32)
     train_data_y = torch.tensor(train_data_y, dtype=torch.int64)
 
@@ -84,8 +84,8 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
     logger.info("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
-    test_data_x = np.load(os.path.join(eval_path, 'test_x_sm.npy' ))
-    test_data_y = np.load(os.path.join(eval_path, 'test_y_sm.npy' )) 
+    test_data_x = np.load(os.path.join(eval_path, 'test_x.npy' ))
+    test_data_y = np.load(os.path.join(eval_path, 'test_y.npy' )) 
     test_data_x = torch.tensor(test_data_x, dtype=torch.float32)
     test_data_y = torch.tensor(test_data_y, dtype=torch.int64)
 
