@@ -60,7 +60,9 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     train_data_y = torch.tensor(train_data_y, dtype=torch.int64)
 
     if is_distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
+        train_sampler_x = torch.utils.data.distributed.DistributedSampler(train_data_x)
+        train_sampler_y = torch.utils.data.distributed.DistributedSampler(train_data_y)
+
     else:
         train_sampler = None
 
