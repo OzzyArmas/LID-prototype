@@ -45,13 +45,11 @@ training_path = os.path.join(input_path, train_channel)
 eval_channel = 'validation'
 eval_path = os.path.join(input_path, eval_channel)
 
-logger = logging.getLogger('instance')
-lvl = logging.WARNING
-lvl_e = logging.ERROR
+logger = logging.getLogger()
 
 def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     
-    logger.info("Get train data loader")
+    logger.warning("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
     train_data_x = np.load(os.path.join(training_path, 'train_x.npy' ))
@@ -81,7 +79,7 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
 def _get_test_data_loader(batch_size, training_dir, **kwargs):
     '''
     '''
-    logger.info("Get train data loader")
+    logger.warning("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
     test_data_x = np.load(os.path.join(eval_path, 'test_x.npy' ))
@@ -120,7 +118,7 @@ def train(args, model_params):
         dist.init_process_group(backend=args.backend, 
                                 rank=host_rank, 
                                 world_size=world_size)
-        logger.info(
+        logger.warning(
             'Init distributed env: \'{}\' backend on {} nodes. '.format(args.backend, 
                 dist.get_world_size()) + \
             'Current host rank is {}. Number of gpus: {}'.format(
@@ -186,7 +184,7 @@ def train(args, model_params):
 
             # update logging information
             if batch_idx % args.log_interval == 0:
-                logger.info('Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
+                logger.warning('Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
                     epoch, batch_idx * len(feature_seq), len(train_x.sampler),
                     100. * batch_idx / len(train_x.sampler), loss.item()))
         
@@ -208,7 +206,7 @@ def test(model, test_x, test_y, device):
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_x)
-    logger.info('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    logger.warning('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_x),
         100. * correct / len(test_x)))    
     
@@ -220,7 +218,7 @@ def _average_gradients(model):
         param.grad.data /= size
 
 def save_model(model, model_dir):
-    logger.info("Saving the model.")
+    logger.warning("Saving the model.")
     path = os.path.join(model_dir, 'model.pth')
     torch.save(model.cpu().state_dict(), path)
 
