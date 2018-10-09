@@ -64,18 +64,20 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
         train_sampler_y = torch.utils.data.distributed.DistributedSampler(train_data_y)
 
     else:
-        train_sampler = None
+        train_sampler_x = None
+        train_sampler_y = None
+
 
     train_data_x = torch.utils.data.DataLoader(train_data_x, 
                                        batch_size=batch_size, 
                                        shuffle=False,
-                                       sampler=train_sampler,
+                                       sampler=train_sampler_x,
                                        **kwargs)
 
     train_data_y = torch.utils.data.DataLoader(train_data_y, 
                                        batch_size=batch_size, 
                                        shuffle=False,
-                                       sampler=train_sampler,
+                                       sampler=train_sampler_y,
                                        **kwargs)
 
     return train_data_x, train_data_y
