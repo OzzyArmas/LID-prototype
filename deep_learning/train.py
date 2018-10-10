@@ -44,7 +44,7 @@ eval_path = os.path.join(input_path, eval_channel)
 # perfectly but it's minor
 logger = logging.getLogger()
 
-#start timing how long will the job run for
+# start timing how long will the job run for
 start = time.time()
 
 def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
@@ -146,7 +146,7 @@ def train(args):
                     total_frames = args.frames, 
                     dropout = args.dropout, 
                     bidirectional = args.bidirectional,
-                    num_layers = args.num_layers,
+                    lstm_layers = args.lstm_layers,
                     linear_layers = args.linear_layers
                     ).to(device)
     
@@ -267,7 +267,7 @@ if __name__ == '__main__':
                             help='total frames per sample/utterance')
         parser.add_argument('--dropout', type=float, default=None,
                             help='desired dropout')
-        parser.add_argument('--num_layers', type=int, default=1,
+        parser.add_argument('--lstm_layers', type=int, default=1,
                             help='total number of lstm layers')
         parser.add_argument('--bidirectional', type=bool, default=False,
                             help='use bidirectional lstm')
