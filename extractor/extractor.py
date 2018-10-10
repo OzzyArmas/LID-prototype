@@ -13,9 +13,16 @@ def get_features(input_file):
     :param input_file: input wave file to convert to to features
     :returns: an np.array vector (3,__,13) of MFCC features representing the input_file
     '''
+    # check for .wav files
     if not input_file[-4:] == '.wav':
         return None
+    
+    # read .wav file and convert to mfcc
     (rate, sig) = wav.read(input_file)
+    
+    # mfcc returns frames x 14 matrix
+    # where the first column is energy and the remaining 13
+    # are mfcc
     features = mfcc(sig, rate)
 
     features = get_clean_deltas(features)
@@ -75,11 +82,11 @@ def get_clean_deltas(features):
         return None
     
     else:
-        # delta
+        # get delta
         delt = delta(features,2)
         # get double delta
         deltdelt = delta(delt,2)
-        # return TOTAL_FRAMES x 3 features
+        # return TOTAL_FRAMES x 3 x n_coeff (13)
         return np.concatenate((
                 [features],
                 [delt], 
@@ -89,16 +96,20 @@ def get_clean_deltas(features):
 def make_feature_set(file_list):
     '''
     :param file_list: list of .wav files to be converted into vectors
-    :returns:
+    :returns: a list of dimensions 
+        (len(file_list) - len(rejected)) x 3 x TOTAL_FRAMES x 13 
     '''   
     feature_set = []
     rejected = []
+    
     for idx, input_file in enumerate(file_list):
         feat = get_features(input_file)
+        
         if feat is not None:
             feat = np.swapaxes(feat, 0, 1)
             feature_set.append(feat.tolist())
         else:
             rejected.append(idx)
+    
     return feature_set, rejected
 
