@@ -49,6 +49,8 @@ eval_path = os.path.join(input_path, eval_channel)
 
 logger = logging.getLogger()
 
+start = time.time()
+
 def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     
     logger.warning("Get train data loader")
@@ -85,7 +87,7 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
 def _get_test_data_loader(batch_size, training_dir, **kwargs):
     '''
     '''
-    logger.warning("Get train data loader")
+    logger.warning("Get test data loader")
     
     # Pre shuffled data, x and y indeces matching
     test_data_x = np.load(os.path.join(eval_path, 'test_x.npy' ))
@@ -194,12 +196,12 @@ def train(args):
                     epoch, batch_idx * len(feature_seq), len(train_x.sampler),
                     100. * batch_idx / len(train_x.sampler), loss.item()))
         
-        test(model, test_x, test_y, device)
+        test(model, test_x, test_y, device, epoch)
         
     save_model(model, args.model_dir)
 
 
-def test(model, test_x, test_y, device):
+def test(model, test_x, test_y, device, epoch):
     model.eval()
     test_loss = 0
     correct = 0
@@ -212,12 +214,15 @@ def test(model, test_x, test_y, device):
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_x)
-    logger.warning('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_x.dataset),
-        100. * correct / len(test_x.dataset)))
-    
-    file_name = 'accuracy.json'
-    acc = {'test_loss' : test_loss, 'acc' : correct/len(test_x.dataset)}
+    file_name = 'accuracy_{}.json'.format(epoch)
+    end = time.time()
+    acc = {
+        'test_loss' : test_loss,
+        'acc'       : correct/len(test_x.dataset),
+        'time'      : end - start,
+        'epoch'     : epoch
+        }
+
     with open(os.path.join(model_path, file_name), 'w') as out:
         json.dump(acc, out)    
     
