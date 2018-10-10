@@ -1,14 +1,12 @@
-import importlib
 import python_speech_features
-importlib.reload(python_speech_features)
 from python_speech_features import mfcc
 from python_speech_features import delta
 from python_speech_features import logfbank
 import scipy.io.wavfile as wav
 import numpy as np
 
-total_frames = 75 #75 ms snippet length
-energy_threshold = 12
+TOTAL_FRAMES = 75 #75 ms snippet length
+MIN_ENERGY = 12
 
 def get_features(input_file):
     '''
@@ -29,7 +27,7 @@ def clean_up(features):
     :returns: clean mfcc features
         function takes mfcc features with values of insufficient energy zero-ed
         then it takes all frames from the first frame that isn't all zero-ed til
-        it has as many frames as total_frames
+        it has as many frames as TOTAL_FRAMES
     '''
     count_frames = 0
     start_frame = -1
@@ -43,11 +41,11 @@ def clean_up(features):
                 start_frame = frame
             count_frames += 1
         
-        if count_frames == total_frames:
+        if count_frames == TOTAL_FRAMES:
             break
     
     if start_frame > -1:
-        return features[start_frame:start_frame + total_frames]
+        return features[start_frame:start_frame + TOTAL_FRAMES]
     return None
 
 def get_clean_deltas(features):
@@ -66,14 +64,14 @@ def get_clean_deltas(features):
     # that aren't loud enough can be benficial for classification
 
     for i,e in enumerate(energy):
-        if e < energy_threshold:
+        if e < MIN_ENERGY:
            features[i] = np.zeros(np.shape(features[i]))
      
     features = clean_up(features)
     
     # check that features are at least as long
     # as the length required
-    if features is None or len(features) < total_frames:
+    if features is None or len(features) < TOTAL_FRAMES:
         return None
     
     else:
@@ -81,7 +79,7 @@ def get_clean_deltas(features):
         delt = delta(features,2)
         # get double delta
         deltdelt = delta(delt,2)
-        # return total_frames x 3 features
+        # return TOTAL_FRAMES x 3 features
         return np.concatenate((
                 [features],
                 [delt], 
