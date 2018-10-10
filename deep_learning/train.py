@@ -51,7 +51,7 @@ logger = logging.getLogger()
 start = time.time()
 
 # For debugging purposes only
-debug = True
+debug = False
 TRAIN_X = 'train_x.npy'
 TRAIN_Y = 'train_y.npy'
 TEST_X = 'test_x.npy'
