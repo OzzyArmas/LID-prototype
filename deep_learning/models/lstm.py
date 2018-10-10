@@ -85,7 +85,7 @@ class MixedLSTM(nn.Module):
             input_size = self.hidden_dim, 
             hidden_size = self.hidden_dim // (self.BiLSTM << 1),
             batch_first = True,
-            lstm_layers = self.lstm_layers,
+            num_layers = self.lstm_layers,
             bidirectional = self.BiLSTM,
             dropout = self.dropout) 
         
