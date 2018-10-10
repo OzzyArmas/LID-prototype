@@ -32,23 +32,19 @@ prefix = '/opt/ml/'
 input_path = prefix + 'input/data/'
 output_path = os.path.join(prefix, 'output')
 model_path = os.path.join(prefix, 'model')
-param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
-'''
-setting training path, there's other channels for
-evaluation and testing. Generally these only useful when 
-the training uses PIPE mode instead of FILE mode; lstm 
-model is currently set up to use FILE as there isn't
-incredibily large amounts of data yet. PIPE should most definitely 
-be used when training data exceeds 10 GB
-'''
+# Training Data
 train_channel = 'training'
 training_path = os.path.join(input_path, train_channel)
+# Validation Data
 eval_channel = 'validation'
 eval_path = os.path.join(input_path, eval_channel)
 
+# Logging used... there's still some issues getting this to work
+# perfectly but it's minor
 logger = logging.getLogger()
 
+#start timing how long will the job run for
 start = time.time()
 
 def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
