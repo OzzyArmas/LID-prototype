@@ -50,13 +50,26 @@ logger = logging.getLogger()
 # start timing how long will the job run for
 start = time.time()
 
+# For debugging purposes only
+debug = True
+TRAIN_X = 'train_x.npy'
+TRAIN_Y = 'train_y.npy'
+TEST_X = 'test_x.npy'
+TEST_Y = 'test_y.npy'
+if debug:
+    TRAIN_X = 'train_x_sm.npy'
+    TRAIN_Y = 'train_y_sm.npy'
+    TEST_X = 'test_x_sm.npy'
+    TEST_Y = 'test_y_sm.npy'
+    
+
 def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     
     logger.warning("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
-    train_data_x = np.load(os.path.join(training_path, 'train_x_sm.npy' ))
-    train_data_y = np.load(os.path.join(training_path, 'train_y_sm.npy' )) 
+    train_data_x = np.load(os.path.join(training_path, TRAIN_X))
+    train_data_y = np.load(os.path.join(training_path, TRAIN_Y)) 
     train_data_x = torch.tensor(train_data_x, dtype=torch.float32)
     train_data_y = torch.tensor(train_data_y, dtype=torch.int64)
 
@@ -89,8 +102,8 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
     logger.warning("Get test data loader")
     
     # Pre shuffled data, x and y indeces matching
-    test_data_x = np.load(os.path.join(eval_path, 'test_x_sm.npy' ))
-    test_data_y = np.load(os.path.join(eval_path, 'test_y_sm.npy' )) 
+    test_data_x = np.load(os.path.join(eval_path, TEST_X))
+    test_data_y = np.load(os.path.join(eval_path, TEST_Y)) 
     test_data_x = torch.tensor(test_data_x, dtype=torch.float32)
     test_data_y = torch.tensor(test_data_y, dtype=torch.int64)
 
