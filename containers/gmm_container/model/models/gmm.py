@@ -7,10 +7,9 @@ see: scikit-learn
 from sklearn.mixture import GaussianMixture
 from collections import defaultdict
 from collections import Counter
-from models.GenericModel import Model
 import numpy as np
 
-class GMM(Model):
+class GMM():
     def __init__(self, n_clusters = 1024, cov_type='full', iter = 100, snippet_length=75, languages=2):
         '''        
         :param n_clusters: total number of clusters to use for GMM, 
