@@ -213,11 +213,11 @@ def test(model, test_x, test_y, device):
 
     test_loss /= len(test_x)
     logger.warning('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_x),
-        100. * correct / len(test_x)))
+        test_loss, correct, len(test_x.dataset),
+        100. * correct / len(test_x.dataset)))
     
     file_name = 'accuracy.json'
-    acc = {'test_loss' : test_loss, 'acc' : correct/len(test_x)}
+    acc = {'test_loss' : test_loss, 'acc' : correct/len(test_x.dataset)}
     with open(os.path.join(model_path, file_name), 'w') as out:
         json.dump(acc, out)    
     
