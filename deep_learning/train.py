@@ -51,7 +51,7 @@ logger = logging.getLogger()
 start = time.time()
 
 # For debugging purposes only
-debug = False
+debug = True
 TRAIN_X = 'train_x.npy'
 TRAIN_Y = 'train_y.npy'
 TEST_X = 'test_x.npy'
@@ -209,8 +209,7 @@ def train(args):
                     100. * batch_idx / len(train_x.sampler), loss.item()))
         
         test(model, test_x, test_y, device, epoch)
-        
-    save_model(model, args.model_dir)
+        save_model(model, args.model_dir, epoch)
 
 
 def test(model, test_x, test_y, device, epoch):
@@ -245,9 +244,9 @@ def _average_gradients(model):
         dist.all_reduce(param.grad.data, op=dist.reduce_op.SUM, group=0)
         param.grad.data /= size
 
-def save_model(model, model_dir):
+def save_model(model, model_dir, epoch):
     logger.warning("Saving the model.")
-    path = os.path.join(model_dir, 'model.pth')
+    path = os.path.join(model_dir, 'model_{}.pth'.format(epoch))
     torch.save(model.cpu().state_dict(), path)
 
 if __name__ == '__main__':
