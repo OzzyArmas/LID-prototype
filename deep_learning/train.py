@@ -20,6 +20,7 @@ import json
 import time
 import ast
 import logging
+from shutil import copy_file
 
 # Pytorch libraries
 import torch
@@ -299,6 +300,8 @@ if __name__ == '__main__':
         parser.add_argument('--num-gpus', type=int, default=env.num_gpus)
         
         train(parser.parse_args())
+        param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
+        copy_file(param_path, os.path.join(model_path, 'model_params.json') 
 
     except Exception as e:
         trc = traceback.format_exc()
