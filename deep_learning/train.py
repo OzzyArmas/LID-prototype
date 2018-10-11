@@ -20,7 +20,7 @@ import json
 import time
 import ast
 import logging
-from shutil import copy_file
+from shutil import copyfile
 
 # Pytorch libraries
 import torch
@@ -301,7 +301,7 @@ if __name__ == '__main__':
         
         train(parser.parse_args())
         param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
-        copy_file(param_path, os.path.join(model_path, 'model_params.json'))
+        copyfile(param_path, os.path.join(model_path, 'model_params.json'))
 
     except Exception as e:
         trc = traceback.format_exc()
