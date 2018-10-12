@@ -196,7 +196,7 @@ def train(args):
 
             # this calls the forward function, through PyTorch
             # output in shape batch_size x 1 x n_languages
-            print(model.weight.type())
+            #print(model.weight.type())
             print(torch.cuda.device_count())
             logger.warning(model)
             scores = model(feature_seq)
