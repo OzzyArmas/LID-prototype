@@ -194,7 +194,7 @@ def train(args):
             # this calls the forward function, through PyTorch
             # output in shape batch_size x 1 x n_languages
             print(model)
-            log.warning(model)
+            logger.warning(model)
             scores = model(feature_seq)
 
             # calculate backward loss, get perform gradient descent
