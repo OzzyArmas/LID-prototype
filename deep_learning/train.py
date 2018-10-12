@@ -170,16 +170,13 @@ def train(args):
     if is_distributed and use_cuda:
         # multi-machine multi-gpu case
         model = torch.nn.parallel.DistributedDataParallel(model)
-        print('distributed')
     else:
         # single-machine multi-gpu case or single-machine or multi-machine cpu case
         model = torch.nn.DataParallel(model)
-        print('parallel')
 
     
     loss_function = nn.NLLLoss()
-    optimizer = optim.Adam(model.parameters(),
-                        lr=args.lr)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
     
     for epoch in range(1, args.epochs + 1):
         model.to(device)
@@ -197,7 +194,6 @@ def train(args):
             # this calls the forward function, through PyTorch
             # output in shape batch_size x 1 x n_languages
             #print(model.weight.type())
-            print(torch.cuda.device_count())
             logger.warning(model)
             scores = model(feature_seq)
 
