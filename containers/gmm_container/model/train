@@ -19,14 +19,6 @@ output_path = os.path.join(prefix, 'output')
 model_path = os.path.join(prefix, 'model')
 param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
-'''
-setting training path, there's other channels for
-evaluation and testing. Generally these only useful when 
-the training uses PIPE mode instead of FILE mode; gmm 
-model is currently set up to use FILE as there isn't
-incredibily large amounts of data yet. PIPE should most definitely 
-be used when training data exceeds 10 GB
-'''
 channel = 'training'
 training_path = os.path.join(input_path, channel)
 train_data = os.path.join(training_path, 'train')
@@ -40,9 +32,6 @@ lvl_e = logging.ERROR
 # will run until completion only using about 10 samples
 debug = False
 debug_length = 2000
-
-# TODO: Think of a way to write this file only once
-# rather than a different version for each container
 
 def eval(model):
     '''
@@ -91,7 +80,6 @@ def train(model, data_x, data_y):
         x = data_x[data_y[lang]]
         model.train(x,data_y[lang])
 
-
     return model
 
 def get_data():
@@ -99,7 +87,6 @@ def get_data():
     Saves training data locally to train model
     if debug is on, it only uses debug_length rows of data
     '''
-    logger.log(lvl, f'debug2: {debug}')
     data_y = {}
     data_x = []
     for idx, language in enumerate(os.listdir(train_data)):
@@ -171,8 +158,6 @@ if __name__ == '__main__':
         with open(param_path, 'r') as hyper:
             training_params = json.load(hyper)
         
-        logger.log(lvl, f'debug : {debug}' )
-
         # Array of data_x, and data_y values
         data_x, data_y = get_data() 
         logger.log(lvl, '[SUCCESS] data parsed')
