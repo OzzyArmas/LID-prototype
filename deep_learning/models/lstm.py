@@ -24,7 +24,7 @@ class MixedLSTM(nn.Module):
                 n_hidden = 512,
                 languages = 2, 
                 total_frames = 75,
-                dropout=None,
+                dropout=0,
                 bidirectional=False,
                 lstm_layers = 1,
                 linear_layers = 1):
@@ -83,7 +83,7 @@ class MixedLSTM(nn.Module):
         # definition of lstm
         self.lstm = nn.LSTM(
             input_size = self.hidden_dim, 
-            hidden_size = self.hidden_dim // (self.BiLSTM << 1),
+            hidden_size = self.hidden_dim // (1 <<  self.BiLSTM),
             batch_first = True,
             num_layers = self.lstm_layers,
             bidirectional = self.BiLSTM,
@@ -141,10 +141,10 @@ class MixedLSTM(nn.Module):
         dimensions are 2 x lstm_layers / directions x 1 x hidden_dim
         '''
         return (torch.zeros(
-                    self.lstm_layers // (self.BiLSTM << 1),
+                    self.lstm_layers // (1 << self.BiLSTM),
                     1, self.hidden_dim),
                 torch.zeros(
-                    self.lstm_layers //  (self.BiLSTM << 1),
+                    self.lstm_layers //  (1 << self.BiLSTM),
                     1, self.hidden_dim))        
     
     def predict(self, x):

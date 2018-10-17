@@ -197,7 +197,7 @@ def train(args):
             logger.warning(model)
             scores = model(feature_seq)
 
-            # calculate backward loss, get perform gradient descent
+            # calculate loss and perform gradient descent using ADAM
             loss = loss_function(scores, language.view(-1))
             loss.backward()
             if is_distributed and not use_cuda:
