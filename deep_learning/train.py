@@ -51,6 +51,10 @@ logger = logging.getLogger()
 # start timing how long will the job run for
 start = time.time()
 
+# Some CONSTANTS
+TRUTH_VALUES = {'yes', 'true', 't', 'y', '1'}
+FALSE_VALUES = {'no', 'false', 'f', 'n', '0'}
+
 # For debugging purposes only
 debug = False
 TRAIN_X = 'train_x.npy'
@@ -65,7 +69,8 @@ if debug:
     
 
 def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
-    
+    '''
+    '''
     logger.warning("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
@@ -97,6 +102,7 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
 
     return train_data_x, train_data_y
 
+
 def _get_test_data_loader(batch_size, training_dir, **kwargs):
     '''
     '''
@@ -122,7 +128,8 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
 
 
 def train(args):
-    
+    '''
+    '''
     # Get parameters provided by SageMaker
     is_distributed = len(args.hosts) > 1 and args.backend is not None
     logger.debug("Distributed training - {}".format(is_distributed))
@@ -177,7 +184,7 @@ def train(args):
     
     loss_function = nn.NLLLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    
+    best_acc = 0
     for epoch in range(1, args.epochs + 1):
         model.to(device)
         model.train()
@@ -216,9 +223,12 @@ def train(args):
 
 
 def test(model, test_x, test_y, device, epoch):
+    '''
+    '''
     model.eval()
     test_loss = 0
     correct = 0
+    
     with torch.no_grad():
         for data, target in zip(test_x, test_y):
             data, target = data.to(device), target.to(device)
@@ -239,18 +249,39 @@ def test(model, test_x, test_y, device, epoch):
 
     with open(os.path.join(model_path, file_name), 'w') as out:
         json.dump(acc, out)    
-    
+
+
 def _average_gradients(model):
+    '''
+    '''
     # Gradient averaging.
     size = float(dist.get_world_size())
+    
     for param in model.parameters():
         dist.all_reduce(param.grad.data, op=dist.reduce_op.SUM, group=0)
         param.grad.data /= size
 
+
 def save_model(model, model_dir, epoch):
+    '''
+    '''
     logger.warning("Saving the model.")
     path = os.path.join(model_dir, 'model_{}.pth'.format(epoch))
     torch.save(model.cpu().state_dict(), path)
+
+
+def str2bool(str_input):
+    '''
+    '''
+    if str_input.lower() in TRUTH_VALUES:
+        return True
+    
+    elif str_input.lower() in FALSE_VALUES:
+        return False
+    
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 
 if __name__ == '__main__':
     try:
@@ -287,7 +318,7 @@ if __name__ == '__main__':
                             help='desired dropout')
         parser.add_argument('--lstm_layers', type=int, default=1,
                             help='total number of lstm layers')
-        parser.add_argument('--bidirectional', type=bool, default=False,
+        parser.add_argument('--bidirectional', type=str2bool, default=False,
                             help='use bidirectional lstm')
         parser.add_argument('--linear_layers', type=int, default=1,
                             help='number of linear layers')
