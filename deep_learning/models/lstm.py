@@ -70,7 +70,7 @@ class MixedLSTM(nn.Module):
         for layer in range(linear_layers - 1):
             layers['layer_' + str(layer)] = nn.Linear(self.hidden_dim,
                                                     self.hidden_dim)
-            layers['relu_' + str(layer)] = nn.ReLU()
+            layers['relu_' + str(layer)] = nn.LeakyReLU()
         
         if len(layers) > 0:
             self.sequential = nn.Sequential(layers)
@@ -78,7 +78,7 @@ class MixedLSTM(nn.Module):
             self.sequential = None
         
         # main Rectifying Linear Unit
-        self.relu_main = nn.ReLU()
+        self.relu_main = nn.LeakyReLU()
         
         # definition of lstm
         self.lstm = nn.LSTM(
