@@ -78,7 +78,7 @@ class MixedLSTM(nn.Module):
             self.sequential = None
         
         # main Rectifying Linear Unit
-        self.relu_main = nn.Sigmoid()
+        self.relu_main = nn.Tanh()
         
         # definition of lstm
         self.lstm = nn.LSTM(
