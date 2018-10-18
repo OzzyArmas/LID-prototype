@@ -10,7 +10,6 @@ from models import lstm
 import numpy as np
 
 # built-in libraries
- 
 import argparse
 import os
 import traceback
@@ -40,12 +39,13 @@ model_path = os.path.join(prefix, 'model')
 # Training Data
 train_channel = 'training'
 training_path = os.path.join(input_path, train_channel)
+
 # Validation Data
 eval_channel = 'validation'
 eval_path = os.path.join(input_path, eval_channel)
 
-# Logging used... there's still some issues getting this to work
-# perfectly but it's minor
+# Logging used... I'm still having some issues with this but
+# it's low priority as important metadata is being saved
 logger = logging.getLogger()
 
 # start timing how long will the job run for
@@ -70,6 +70,12 @@ if debug:
 
 def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     '''
+    :param batch_size: batch size to separate data into
+    :param training_dir: directory to get data from,
+        may require different implementation if using SageMaker PIPE mode
+    :param is_distributed: whether or not distributed learning is being used
+        (a.k.a accross more than one instance)
+    :param **kwargs: any DataLoader specific kwargs
     '''
     logger.warning("Get train data loader")
     
@@ -105,6 +111,10 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
 
 def _get_test_data_loader(batch_size, training_dir, **kwargs):
     '''
+    :param batch_size: batch size to separate data into
+    :param training_dir: directory to get data from,
+        may require different implementation if using SageMaker PIPE mode
+    :param **kwargs: any DataLoader specific kwargs
     '''
     logger.warning("Get test data loader")
     
@@ -129,6 +139,7 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
 
 def train(args):
     '''
+    :param args: argument object containing values of commandline args
     '''
     # Get parameters provided by SageMaker
     is_distributed = len(args.hosts) > 1 and args.backend is not None
@@ -218,17 +229,28 @@ def train(args):
                     epoch, batch_idx * len(feature_seq), len(train_x.sampler),
                     100. * batch_idx / len(train_x.sampler), loss.item()))
         
-        test(model, test_x, test_y, device, epoch)
-        save_model(model, args.model_dir, epoch)
+        acc = test(model, test_x, test_y, device, epoch, best_acc)
+        # save model with best accuracy
+        if best_acc < acc:
+            save_model(model, args.model_dir)
 
 
-def test(model, test_x, test_y, device, epoch):
+def test(model, test_x, test_y, device, epoch, best_acc):
     '''
+    :param model: nn.Model representing most recently trained version of model
+    :param test_x: DataLoader for features
+    :param test_y: DataLoader for labels
+    :param device: torch.device to use, cpu/cuda
+    :param epoch: current Epoch of training
+    :param best_acc: best accuracy to use indicate which file holds the best
+        models performance metadata
+    :returns: accuracy of current test to be used to saved best model
     '''
     model.eval()
     test_loss = 0
     correct = 0
     
+    # Do not Calculate gradient when evaluating/testing data
     with torch.no_grad():
         for data, target in zip(test_x, test_y):
             data, target = data.to(device), target.to(device)
@@ -237,6 +259,7 @@ def test(model, test_x, test_y, device, epoch):
             pred = output.max(1, keepdim=True)[1]
             correct += pred.eq(target.view_as(pred)).sum().item()
 
+    # Test metadata to save
     test_loss /= len(test_x)
     file_name = 'accuracy_{}.json'.format(epoch)
     end = time.time()
@@ -246,13 +269,22 @@ def test(model, test_x, test_y, device, epoch):
         'time'      : end - start,
         'epoch'     : epoch
         }
-
+    
     with open(os.path.join(model_path, file_name), 'w') as out:
         json.dump(acc, out)    
+    
+    if best_acc < acc['acc']:
+        best_file = 'best_model.json'
+        with open(os.path.join(model_path, best_file), 'w') as out:
+            json.dump(acc, out)
 
+    return acc['acc']
 
 def _average_gradients(model):
     '''
+    :param model: nn.Module representing model after a batch.
+        Gradiant Averaging gets the average gradient accross workers
+        and uses it to calculate gradiant descent
     '''
     # Gradient averaging.
     size = float(dist.get_world_size())
@@ -262,16 +294,24 @@ def _average_gradients(model):
         param.grad.data /= size
 
 
-def save_model(model, model_dir, epoch):
+def save_model(model, model_dir):
     '''
+    :param model: nn.Module to save
+    :param model_dir: SageMaker specified directory to save output data into 
     '''
     logger.warning("Saving the model.")
-    path = os.path.join(model_dir, 'model_{}.pth'.format(epoch))
+    path = os.path.join(model_dir, 'model.pth')
     torch.save(model.cpu().state_dict(), path)
 
 
 def str2bool(str_input):
     '''
+    :param str_input: string input to verify if it should
+        evaluate to TRUE or FALSE
+    :returns: whether or not the str_input correctly evaluates to
+        TRUE or FALSE
+    :raises ArgumentTypeError: in case input is not withing either set
+        of possible values
     '''
     if str_input.lower() in TRUTH_VALUES:
         return True
