@@ -233,6 +233,7 @@ def train(args):
         # save model with best accuracy
         if best_acc < acc:
             save_model(model, args.model_dir)
+            best_acc = acc
 
 
 def test(model, test_x, test_y, device, epoch, best_acc):
