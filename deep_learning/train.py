@@ -20,6 +20,7 @@ import time
 import ast
 import logging
 from shutil import copyfile
+from collections import defaultdict
 
 # Pytorch libraries
 import torch
@@ -56,7 +57,7 @@ TRUTH_VALUES = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUES = {'no', 'false', 'f', 'n', '0'}
 
 # For debugging purposes only
-debug = False
+debug = True
 TRAIN_X = 'train_x.npy'
 TRAIN_Y = 'train_y.npy'
 TEST_X = 'test_x.npy'
@@ -225,10 +226,11 @@ def train(args):
 
             # update logging information
             if batch_idx % args.log_interval == 0:
-                logger.warning('Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
+                logger.debug(
+                    'Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
                     epoch, batch_idx * len(feature_seq), len(train_x.sampler),
                     100. * batch_idx / len(train_x.sampler), loss.item()))
-        
+
         acc = test(model, test_x, test_y, device, epoch, best_acc)
         # save model with best accuracy
         if best_acc < acc:
@@ -250,6 +252,10 @@ def test(model, test_x, test_y, device, epoch, best_acc):
     model.eval()
     test_loss = 0
     correct = 0
+    # Start dictionaries to keep track of
+    # False Acceptance Rate and False Rejection Rate
+    FAR = defaultdict(float)
+    FRR = defaultdict(float)
     
     # Do not Calculate gradient when evaluating/testing data
     with torch.no_grad():
@@ -258,7 +264,16 @@ def test(model, test_x, test_y, device, epoch, best_acc):
             output = model(data)
             test_loss += F.nll_loss(output, target, size_average=False).item()
             pred = output.max(1, keepdim=True)[1]
-            correct += pred.eq(target.view_as(pred)).sum().item()
+            
+            # Save the values that were wrong to calculate
+            # False Acceptances, False Rejections
+            equality_vec = pred.eq(target.view_as(pred))
+            indeces = (equality_vec == 0).nonzero()
+            correct += equality_vec.sum().item()
+            
+            for idx in indeces:
+                FAR[pred[idx]] += 1
+                FRR[target[idx]] += 1
 
     # Test metadata to save
     test_loss /= len(test_x)
@@ -268,7 +283,9 @@ def test(model, test_x, test_y, device, epoch, best_acc):
         'test_loss' : test_loss,
         'acc'       : correct/len(test_x.dataset),
         'time'      : end - start,
-        'epoch'     : epoch
+        'epoch'     : epoch,
+        'FAR'       : FAR,
+        'FRR'       : FRR
         }
     
     with open(os.path.join(model_path, file_name), 'w') as out:
