@@ -286,6 +286,7 @@ def test(model, test_x, test_y, device, epoch, best_acc):
         'epoch'     : epoch,
         'FAR'       : FAR,
         'FRR'       : FRR
+        'total'     : correct
         }
     
     with open(os.path.join(model_path, file_name), 'w') as out:
