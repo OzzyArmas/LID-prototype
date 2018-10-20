@@ -58,10 +58,10 @@ FALSE_VALUES = {'no', 'false', 'f', 'n', '0'}
 
 # For debugging purposes only
 debug = False
-TRAIN_X = 'train_x.npy'
-TRAIN_Y = 'train_y.npy'
-TEST_X = 'test_x.npy'
-TEST_Y = 'test_y.npy'
+TRAIN_X = 'train_x_3.npy'
+TRAIN_Y = 'train_y_3.npy'
+TEST_X = 'test_x_3.npy'
+TEST_Y = 'test_y_3.npy'
 if debug:
     TRAIN_X = 'train_x_sm.npy'
     TRAIN_Y = 'train_y_sm.npy'
