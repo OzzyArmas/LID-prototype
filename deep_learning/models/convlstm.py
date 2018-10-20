@@ -75,7 +75,7 @@ class ConvLSTM(nn.Module):
         # 3,1 -> Forgoes shifted delta, only sees coeff relationships
         #         May be larger than 3, it doesn't have to be just adjacent
         self.sequential_conv = nn.Sequential(
-                                    nn.Conv2d(3,3,(1,7), padding=(0,3))
+                                    nn.Conv2d(3,3,(1,7), padding=(0,3)),
                                     nn.MaxPool2d((1,3), padding=(0,1)))
 
 
