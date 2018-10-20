@@ -23,8 +23,7 @@ class ConvLSTM(nn.Module):
                 dropout         = 0,
                 bidirectional   = False,
                 lstm_layers     = 1,
-                linear_layers   = 1,
-                batch_size      = 100)
+                linear_layers   = 1):
         '''
         :param n_features: number of features in a sample
         :param n_hidden: number of hidden dimensions to use
