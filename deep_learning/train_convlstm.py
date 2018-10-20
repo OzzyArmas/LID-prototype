@@ -304,7 +304,7 @@ def test(model, test_x, test_y, device, epoch, best_acc):
         'epoch'             : epoch,
         'FAR'               : FAR,
         'FRR'               : FRR,
-        'EER'               : (FAR + FRR) / 2
+        'EER'               : (FAR + FRR) / 2,
         'total_correct'     : correct,
         'total_test_set'    : len(test_x.dataset)
         }
