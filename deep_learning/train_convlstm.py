@@ -226,8 +226,6 @@ def train(args):
 
             # this calls the forward function, through PyTorch
             # output in shape batch_size x 1 x n_languages
-            #print(model.weight.type())
-            logger.warning(model)
             scores = model(feature_seq)
 
             # calculate loss and perform gradient descent using ADAM
@@ -270,6 +268,7 @@ def test(model, test_x, test_y, device, epoch, best_acc):
     # False Acceptance Rate and False Rejection Rate
     FAR = defaultdict(float)
     FRR = defaultdict(float)
+    EER = defaultdict(float)
     
     # Do not Calculate gradient when evaluating/testing data
     with torch.no_grad():
@@ -292,6 +291,7 @@ def test(model, test_x, test_y, device, epoch, best_acc):
     for k1,k2 in zip(FAR, FRR):
         FAR[k1] /= len(test_x.dataset)
         FRR[k2] /= len(test_x.dataset)
+        EER[k1] = (FAR[k1] + FRR[k2]) / 2
 
     # Test metadata to save
     test_loss /= len(test_x)
@@ -304,7 +304,7 @@ def test(model, test_x, test_y, device, epoch, best_acc):
         'epoch'             : epoch,
         'FAR'               : FAR,
         'FRR'               : FRR,
-        'EER'               : (FAR + FRR) / 2,
+        'EER'               : EER,
         'total_correct'     : correct,
         'total_test_set'    : len(test_x.dataset)
         }
