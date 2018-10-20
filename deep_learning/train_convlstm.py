@@ -57,7 +57,7 @@ TRUTH_VALUES = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUES = {'no', 'false', 'f', 'n', '0'}
 
 # For debugging purposes only
-debug = True
+debug = False
 TRAIN_X = 'train_x.npy'
 TRAIN_Y = 'train_y.npy'
 TEST_X = 'test_x.npy'
