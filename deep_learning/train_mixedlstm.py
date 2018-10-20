@@ -272,8 +272,8 @@ def test(model, test_x, test_y, device, epoch, best_acc):
             correct += equality_vec.sum().item()
             
             for idx in indeces:
-                FAR[pred[idx]] += 1
-                FRR[target[idx]] += 1
+                FAR[pred[idx].item()] += 1
+                FRR[target[idx].item()] += 1
 
     # Test metadata to save
     test_loss /= len(test_x)
