@@ -267,11 +267,14 @@ def test(model, test_x, test_y, device, epoch, best_acc):
             
             # Save the values that were wrong to calculate
             # False Acceptances, False Rejections
-            equality_vec = pred.eq(target.view_as(pred))
+            target = target.view_as(pred)
+            equality_vec = pred.eq(target)
             indeces = (equality_vec == 0).nonzero()
             correct += equality_vec.sum().item()
             
             for idx in indeces:
+                print(pred[idx])
+                print(target[idx])
                 FAR[pred[idx].item()] += 1
                 FRR[target[idx].item()] += 1
 
