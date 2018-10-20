@@ -85,8 +85,8 @@ class ConvLSTM(nn.Module):
         # add Sequential layers for NN using and OrderedDict
         layers = OrderedDict()
         for layer in range(linear_layers - 1):
-            layers['layer_' + str(layer)] = 
-                    nn.Linear(self.hidden_dim, self.hidden_dim)
+            layers['layer_' + str(layer)] = nn.Linear(self.hidden_dim,
+                                                      self.hidden_dim)
             layers['relu_' + str(layer)] = nn.LeakyReLU()
         
         if len(layers) > 0:
