@@ -289,6 +289,10 @@ def test(model, test_x, test_y, device, epoch, best_acc):
                 FAR[pred[idx][0].item()] += 1
                 FRR[target[idx][0].item()] += 1
 
+    for k1,k2 in zip(FAR, FRR):
+        FAR[k1] /= len(test_x.dataset)
+        FRR[k2] /= len(test_x.dataset)
+
     # Test metadata to save
     test_loss /= len(test_x)
     file_name = 'accuracy_{}.json'.format(epoch)
@@ -300,6 +304,7 @@ def test(model, test_x, test_y, device, epoch, best_acc):
         'epoch'             : epoch,
         'FAR'               : FAR,
         'FRR'               : FRR,
+        'EER'               : (FAR + FRR) / 2
         'total_correct'     : correct,
         'total_test_set'    : len(test_x.dataset)
         }
