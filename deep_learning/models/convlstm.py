@@ -64,7 +64,6 @@ class ConvLSTM(nn.Module):
         #Channels is always going to be three
         self.CHANNELS = 3
 
-        self.batch_size = batch_size
         # Somer Kernel Information on what they do if data shape is:
         #      batch_size x channels x coefficients x frequencies
         # 
