@@ -127,7 +127,7 @@ class ConvLSTM(nn.Module):
         self.hidden = self.init_hidden()
 
         # batch_size x channels x n_coefficients x total_frames
-        out =  sequential_conv(x_in)
+        out = self.sequential_conv(x_in)
         
         # reshape into batch_size x total_frames x channel * n_coefficients
         out = out.reshape([out.size(0), out.size(3), out.size(1) * out.size(2)])
