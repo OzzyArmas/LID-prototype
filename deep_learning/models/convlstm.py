@@ -96,12 +96,12 @@ class ConvLSTM(nn.Module):
                                         self.kernel,
                                         padding=(
                                             self.kernel[0]//2,
-                                            self.kernel[1]//2)),
-                                    nn.AvgPool2d(
-                                        self.pool_kernel,
-                                        padding = (
-                                                self.pool_kernel[0]//2,
-                                                self.pool_kernel[1]//2 )))
+                                            self.kernel[1]//2)))
+                                    # nn.AvgPool2d(
+                                    #     self.pool_kernel,
+                                    #     padding = (
+                                    #             self.pool_kernel[0]//2,
+                                    #             self.pool_kernel[1]//2 )))
 
         # main Linear Layer
         self.linear_main = nn.Linear(self.out_channels * self.pooled_dim, self.hidden_dim)
