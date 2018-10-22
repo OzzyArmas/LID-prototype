@@ -1,5 +1,10 @@
 from models import convlstm
 from models import lstm
+#!/usr/bin/env python
+
+# This file only works within sagemaker
+import sagemaker_containers
+
 # Important external libraries
 import numpy as np
 
