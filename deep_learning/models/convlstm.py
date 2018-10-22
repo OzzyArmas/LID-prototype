@@ -23,7 +23,9 @@ class ConvLSTM(nn.Module):
                 dropout         = 0,
                 bidirectional   = False,
                 lstm_layers     = 1,
-                linear_layers   = 1):
+                linear_layers   = 1,
+                kernel          = (1,7),
+                out_channels    = 3):
         '''
         :param n_features: number of features in a sample
         :param n_hidden: number of hidden dimensions to use
@@ -64,18 +66,32 @@ class ConvLSTM(nn.Module):
         #Channels is always going to be three
         self.CHANNELS = 3
 
+        # number of channels/filters to apply during convolution
+        self.out_channels = out_channels
+        
+        # tubple representing the shape of the kernel to use for each filter
+        self.kernel = kernel
+
         # Somer Kernel Information on what they do if data shape is:
         #      batch_size x channels x coefficients x frequencies
         # 
-        # 1,7 -> Gets Shifted Delta filters
+        # 1,7 -> Get shifted frame ceofficients
         #       Treats each coefficient as if independent of others
-        # 3,7 -> Gets shifted Delta Filters
+        # 3,7 -> Gets shifted frame coefficients
         #       Treats coefficient as if it were related to adjancents ones
         # 3,1 -> Forgoes shifted delta, only sees coeff relationships
-        #         May be larger than 3, it doesn't have to be just adjacent
+        #       May be larger than 3, it doesn't have to be just adjacent
+        # kernel of size 3 are usually used to reduce complexity
         self.sequential_conv = nn.Sequential(
-                                    nn.Conv2d(3,3,(1,7), padding=(0,3)),
-                                    nn.MaxPool2d((1,3), padding=(0,1)))
+                                    nn.Conv2d(self.CHANNELS,
+                                        self.out_channels,
+                                        self.kernel,
+                                        padding=(0,3)),
+                                    # the values here are also 
+                                    # experimental but coded in to retain 
+                                    # some consistency
+                                    nn.MaxPool2d(
+                                        (1,3), padding=(0,1)))
 
 
         # main Linear Layer
