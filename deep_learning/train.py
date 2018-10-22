@@ -371,7 +371,7 @@ def bool_parse(str_input):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def tuple_parse(str_input):
-       '''
+    '''
     :param str_input: string input to verify if the value is an input
         tuple or not, if not an input, ast.literal_eval will take care
         of converting it
@@ -383,7 +383,7 @@ def tuple_parse(str_input):
     '''
     if type(input_tuple) == tuple:
         return input_tuple
-    elif type(input_tuple) == tuple:
+    elif type(input_tuple) == str:
         return ast.literal_eval(input_tuple)
     else:
         raise argparse.ArgumentTypeError('Tuple or String expected')
