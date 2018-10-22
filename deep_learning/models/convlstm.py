@@ -16,7 +16,7 @@ from collections import OrderedDict
 
 class ConvLSTM(nn.Module):
     def __init__(self,
-                n_features      = 39,
+                n_features      = 13,
                 n_hidden        = 512,
                 languages       = 2, 
                 total_frames    = 75,
@@ -63,15 +63,22 @@ class ConvLSTM(nn.Module):
         # BiLSTM
         self.BiLSTM = bidirectional
 
-        #Channels is always going to be three
-        self.CHANNELS = 3
-
         # number of channels/filters to apply during convolution
         self.out_channels = out_channels
         
         # tubple representing the shape of the kernel to use for each filter
         self.kernel = kernel
 
+        # Input Channels is always going to be three
+        self.CHANNELS = 3
+
+        # The pooling kernel will affect the shape of the features
+        # entering the linear layer
+        self.pool_kernel = (1, 3)
+
+        # 
+        self.pooled_dim = n_features // self.pool_kernel[0]
+        
         # Somer Kernel Information on what they do if data shape is:
         #      batch_size x channels x coefficients x frequencies
         # 
@@ -83,19 +90,19 @@ class ConvLSTM(nn.Module):
         #       May be larger than 3, it doesn't have to be just adjacent
         # kernel of size 3 are usually used to reduce complexity
         self.sequential_conv = nn.Sequential(
-                                    nn.Conv2d(self.CHANNELS,
+                                    nn.Conv2d(
+                                        self.CHANNELS,
                                         self.out_channels,
                                         self.kernel,
-                                        padding=(kernel[0]//2, kernel[1]//2)))
-                                    # the values here are also 
-                                    # experimental but coded in to retain 
-                                    # some consistency
-                                    # nn.AvgPool2d(
-                                    #     (1,3), padding=(0,1)))
-
+                                        padding=(kernel[0]//2, kernel[1]//2)),
+                                    nn.AvgPool2d(
+                                        self.pool_kernel,
+                                        padding = (
+                                                pool_kernel[0]//2,
+                                                pool_kernel[1]//2 )))
 
         # main Linear Layer
-        self.linear_main = nn.Linear(self.feature_dim, self.hidden_dim)
+        self.linear_main = nn.Linear(self.out_channels * self.pooled_dim, self.hidden_dim)
         
         # add Sequential layers for NN using and OrderedDict
         layers = OrderedDict()
