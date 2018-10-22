@@ -65,6 +65,14 @@ TEST_Y = 'test_y_3.npy'
 DELTA_CHANNELS =  3
 CONVLSTM = 'ConvLSTM'
 MIXEDLSTM = 'MixedLSTM'
+SIX_LANGUAGE_DISTRIBUTION = Torch.tensor([ # Fractions of language representation
+                                        0.21185058424022032, # English
+                                        0.21268393985578937, # Spanish
+                                        0.21167232635453712, # French
+                                        0.12096580122463167, # Italian
+                                        0.12117971068745154, # Russian
+                                        0.12164763763736998  # German
+                                        ])
 
 def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kwargs):
     '''

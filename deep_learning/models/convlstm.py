@@ -16,7 +16,7 @@ from collections import OrderedDict
 
 class ConvLSTM(nn.Module):
     def __init__(self,
-                n_features      = 13,
+                n_features      = 39,
                 n_hidden        = 512,
                 languages       = 2, 
                 total_frames    = 75,
@@ -41,12 +41,15 @@ class ConvLSTM(nn.Module):
         '''
         conv_nets about to be added
         '''
+        # Input Channels is always going to be three
+        self.CHANNELS = 3
+        
         # number of hidden dimensions, could be more complex
         # but we maintain the same number in all layers
         self.hidden_dim = n_hidden
 
         # number of features, aka input dimension
-        self.feature_dim = n_features
+        self.feature_dim = n_features // self.CHANNELS
         
         # number of languages to score, aka output dimension
         self.n_languages = languages
@@ -68,9 +71,6 @@ class ConvLSTM(nn.Module):
         
         # tubple representing the shape of the kernel to use for each filter
         self.kernel = kernel
-
-        # Input Channels is always going to be three
-        self.CHANNELS = 3
 
         # The pooling kernel will affect the shape of the features
         # entering the linear layer
