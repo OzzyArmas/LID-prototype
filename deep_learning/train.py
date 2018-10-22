@@ -71,7 +71,7 @@ DELTA_CHANNELS =  3
 CONVLSTM = 'ConvLSTM'
 MIXEDLSTM = 'MixedLSTM'
 
-def _get_train_data_loader(batch_size, training_dir, is_distributed, model, **kwargs):
+def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kwargs):
     '''
     :param batch_size: batch size to separate data into
     :param training_dir: directory to get data from,
@@ -88,14 +88,14 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, model, **kw
     train_data_x = torch.tensor(train_data_x, dtype=torch.float32)
     train_data_y = torch.tensor(train_data_y, dtype=torch.int64)
     
-    shape_x = train_data_x.size()  # Number Samples x frames x coefficients
     if model == CONVLSTM:
+        shape_x = train_data_x.size()  # Number Samples x frames x coefficients
         train_data_x = train_data_x.reshape(shape_x[0],
                                             DELTA_CHANNELS,
                                             shape_x[2] / DELTA_CHANNELS,
                                             shape_x[1])
 
-    
+
     if is_distributed:
         train_sampler_x = torch.utils.data.distributed.DistributedSampler(train_data_x)
         train_sampler_y = torch.utils.data.distributed.DistributedSampler(train_data_y)
@@ -191,9 +191,11 @@ def train(args):
                                         args.data_dir,
                                         args.model, 
                                         is_distributed)
+    
     test_x, test_y = _get_test_data_loader(args.test_batch_size,
-                                        args.model,
-                                        args.data_dir)
+                                        args.data_dir,
+                                        args.model)
+    
     model = None
     if args.model == CONVLSTM:
         model = convlstm.ConvLSTM(
