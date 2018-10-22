@@ -56,7 +56,7 @@ TRUTH_VALUES = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUES = {'no', 'false', 'f', 'n', '0'}
 
 # For debugging purposes only
-debug = True
+debug = False
 TRAIN_X = 'train_x_3.npy'
 TRAIN_Y = 'train_y_3.npy'
 TEST_X = 'test_x_3.npy'
@@ -386,10 +386,10 @@ def tuple_parse(str_input):
         was input, if the value is parse correctly, then ConvLSTM will raise
         an error if the numeric values are wrong
     '''
-    if type(input_tuple) == tuple:
-        return input_tuple
-    elif type(input_tuple) == str:
-        return ast.literal_eval(input_tuple)
+    if type(str_input) == tuple:
+        return str_input
+    elif type(str_input) == str:
+        return ast.literal_eval(str_input)
     else:
         raise argparse.ArgumentTypeError('Tuple or String expected')
 
