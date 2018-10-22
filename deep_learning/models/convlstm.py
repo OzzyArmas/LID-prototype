@@ -86,12 +86,12 @@ class ConvLSTM(nn.Module):
                                     nn.Conv2d(self.CHANNELS,
                                         self.out_channels,
                                         self.kernel,
-                                        padding=(kernel[0]//2, kernel[1]//2)),
+                                        padding=(kernel[0]//2, kernel[1]//2)))
                                     # the values here are also 
                                     # experimental but coded in to retain 
                                     # some consistency
-                                    nn.AvgPool2d(
-                                        (1,3), padding=(0,1)))
+                                    # nn.AvgPool2d(
+                                    #     (1,3), padding=(0,1)))
 
 
         # main Linear Layer
