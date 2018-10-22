@@ -21,11 +21,39 @@ def get_features(input_file):
     (rate, sig) = wav.read(input_file)
     
     # mfcc returns frames x 14 matrix
-    # where the first column is energy and the remaining 13
-    # are mfcc
+    # where the first column is energy
+    # and the remaining 13 are mfcc
     features = mfcc(sig, rate)
+    features = filter_energy(features)
+    if len(features) > 0:
+        out_feats = []
+        last_feat = 0
+        for feat in range(TOTAL_FRAMES, len(features), TOTAL_FRAMES):
+            out_feats.append(get_deltas(features[last_feat:feat]))
+            last_feat = feat
+        # at this point out_feats is either []
+        # or it's n_subsequences x TOTAL_FRAMES x 13 x 3
+        return out_feats
+    
+    return []
 
-    features = get_clean_deltas(features)
+def filter_energy(features):
+    '''
+    :param features: np.array of mfcc features
+    :return: np.array of mfcc features after` energy is filtered
+    '''
+    energy = features[:,0]
+    features = features[:,1:]
+
+    for i,e in enumerate(energy):
+        if e < MIN_ENERGY:
+           features[i] = np.zeros(np.shape(features[i]))
+     
+    # Cuts initial and tail noise 
+    # TODO: Implement a speech detector rather than volume detector
+    # particularly important for it to work with whisper
+    features = clean_up(features)
+    features = clean_up(features[::-1])[::-1] if len(features) > 0 else []
     return features
 
 def clean_up(features):
@@ -33,83 +61,64 @@ def clean_up(features):
     :param features: mfcc features to clean up
     :returns: clean mfcc features
         function takes mfcc features with values of insufficient energy zero-ed
-        then it takes all frames from the first frame that isn't all zero-ed til
-        it has as many frames as TOTAL_FRAMES
+        then it takes all frames from the first frame that isn't all 
+        zero-ed until it has as many frames as TOTAL_FRAMES
     '''
     count_frames = 0
     start_frame = -1
-    
+
     for frame,feature in enumerate(features):
         if not feature.all():
             continue
-        
         else:
             if start_frame == -1:
                 start_frame = frame
             count_frames += 1
-        
-        if count_frames == TOTAL_FRAMES:
-            break
     
-    if start_frame > -1:
-        return features[start_frame:start_frame + TOTAL_FRAMES]
-    return None
+    if count_frames >= TOTAL_FRAMES:
+        features = features[start_frame:]
+        return features
+    
+    return []
 
-def get_clean_deltas(features):
+def get_deltas(features):
     '''
-    :param features: MFCC feature to get a snippet from
-    :param delt: Delta features to get a snippet from
-    :param deltdelt: DeltaDelta features to get a snippet from
-    :return: 3 x max(length, full audio) x 13 array 
+    :param features: MFCC feature array to get a snippet from
+    :return: array of dimensions 3 x TOTAL_FRAMES x 13  
         representing ceptral features for length ms of time or 
         None if the min length can't be met
     '''
-    energy = features[:,0]
-    features = features[:,1:]
-            
-    # experimental for loop to test if eliminating frames
-    # that aren't loud enough can be benficial for classification
-
-    for i,e in enumerate(energy):
-        if e < MIN_ENERGY:
-           features[i] = np.zeros(np.shape(features[i]))
-     
-    features = clean_up(features)
+    # get delta
+    delt = delta(features,2)
+    # get double delta
+    deltdelt = delta(delt,2)
+    # return  3 x TOTAL_FRAMES x 13
+    return np.concatenate(([features], [delt], [deltdelt]), axis = 0)
     
-    # check that features are at least as long
-    # as the length required
-    if features is None or len(features) < TOTAL_FRAMES:
-        return None
-    
-    else:
-        # get delta
-        delt = delta(features,2)
-        # get double delta
-        deltdelt = delta(delt,2)
-        # return TOTAL_FRAMES x 3 x n_coeff (13)
-        return np.concatenate((
-                [features],
-                [delt], 
-                [deltdelt]), 
-                axis=0)#note enerhy is a separate output      
-
-def make_feature_set(file_list):
+def make_feature_set(file_list, language_label):
     '''
     :param file_list: list of .wav files to be converted into vectors
     :returns: a list of dimensions 
-        (len(file_list) - len(rejected)) x 3 x TOTAL_FRAMES x 13 
-    '''   
+        (len(file_list) - len(rejected files)) x 3 x TOTAL_FRAMES x 13 
+    '''
     feature_set = []
-    rejected = []
-    
     for idx, input_file in enumerate(file_list):
+        # at this point out_feats is either []
+        # or it's n_subsequences x 3 x TOTAL_FRAMES x 13
         feat = get_features(input_file)
-        
-        if feat is not None:
-            feat = np.swapaxes(feat, 0, 1)
-            feature_set.append(feat.tolist())
-        else:
-            rejected.append(idx)
+        if len(feat) > 0:
+            feature_set.append(feat)
+
+    # Now, feature_set will be
+    # n_files x variable n_subsequences x 3 x TOTAL_FRAMES x 13
+    # which is why we concatenate along axis = 0 to get
+    # sum(sub_sequences) x 3 x TOTAL_FRAMES x 13
+    feature_set = np.concatenate(feature_set, axis=0)
     
-    return feature_set, rejected
+    # Given that files are all the same language per directory
+    # iterating through a directory and creating all subsequences will
+    # result on sum(sub_sequences) of langugage_labels
+    label_vector = [language_label] * len(feature_set)
+    
+    return feature_set, label_vector
 

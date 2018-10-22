@@ -1,9 +1,6 @@
-#!/usr/bin/env python
+import train_convlstm
+import train_mixedlstm
 
-# This file only works within sagemaker
-import sagemaker_containers
-
-# Model importing
 from models import convlstm
 
 # Important external libraries
@@ -57,7 +54,7 @@ TRUTH_VALUES = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUES = {'no', 'false', 'f', 'n', '0'}
 
 # For debugging purposes only
-debug = False
+debug = True
 TRAIN_X = 'train_x_3.npy'
 TRAIN_Y = 'train_y_3.npy'
 TEST_X = 'test_x_3.npy'
@@ -152,7 +149,7 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
     return test_data_x, test_data_y
 
 
-def train(args):
+def train(args, model):
     '''
     :param args: argument object containing values of commandline args
     '''
@@ -188,17 +185,29 @@ def train(args):
                                         is_distributed)
     test_x, test_y = _get_test_data_loader(args.test_batch_size, 
                                         args.data_dir)
-    
-    model = convlstm.MixedLSTM(
-                    n_features = args.n_features, 
-                    n_hidden = args.n_hidden, 
-                    languages = args.languages,
-                    total_frames = args.frames, 
-                    dropout = args.dropout, 
-                    bidirectional = args.bidirectional,
-                    lstm_layers = args.lstm_layers,
-                    linear_layers = args.linear_layers
-                    ).to(device)
+    model = None
+    if args.model == 'ConvLSTM':
+        model = convlstm.ConvLSTM(
+                        n_features = args.n_features, 
+                        n_hidden = args.n_hidden, 
+                        languages = args.languages,
+                        total_frames = args.frames, 
+                        dropout = args.dropout, 
+                        bidirectional = args.bidirectional,
+                        lstm_layers = args.lstm_layers,
+                        linear_layers = args.linear_layers
+                        kernel = args.kernel).to(device)
+    else:
+        model = lstm.MixedLSTM(
+                        n_features = args.n_features, 
+                        n_hidden = args.n_hidden, 
+                        languages = args.languages,
+                        total_frames = args.frames, 
+                        dropout = args.dropout, 
+                        bidirectional = args.bidirectional,
+                        lstm_layers = args.lstm_layers,
+                        linear_layers = args.linear_layers
+                        ).to(device)
     
     if is_distributed and use_cuda:
         # multi-machine multi-gpu case
@@ -344,7 +353,7 @@ def save_model(model, model_dir):
     torch.save(model.cpu().state_dict(), path)
 
 
-def str2bool(str_input):
+def bool_parse(str_input):
     '''
     :param str_input: string input to verify if it should
         evaluate to TRUE or FALSE
@@ -355,63 +364,91 @@ def str2bool(str_input):
     '''
     if str_input.lower() in TRUTH_VALUES:
         return True
-    
     elif str_input.lower() in FALSE_VALUES:
         return False
-    
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
+def tuple_parse(str_input):
+       '''
+    :param str_input: string input to verify if the value is an input
+        tuple or not, if not an input, ast.literal_eval will take care
+        of converting it
+    :returns: whether or not the str_input correctly evaluates to
+        TRUE or FALSE
+    :raises ArgumentTypeError: In case a value other than a tuple or string
+        was input, if the value is parse correctly, then ConvLSTM will raise
+        an error if the numeric values are wrong
+    '''
+    if type(input_tuple) == tuple:
+        return input_tuple
+    elif type(input_tuple) == tuple:
+        return ast.literal_eval(input_tuple)
+    else:
+        raise argparse.ArgumentTypeError('Tuple or String expected')
+
+def get_parser():
+    '''
+    :returns an argument parser
+    '''
+    parser = argparse.ArgumentParser()
+    
+    # Data and Training information
+    parser.add_argument('--batch-size', type=int, default=128, metavar='N',
+                        help='input batch size for training (default: 64)')
+    parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
+                        help='input batch size for testing (default: 1000)')
+    parser.add_argument('--epochs', type=int, default=2, metavar='N',
+                        help='number of epochs to train (default: 10)')
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
+                        help='learning rate (default: 0.001)')
+    parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
+                        help='SGD momentum (default: 0.5)')
+    parser.add_argument('--seed', type=int, default=1, metavar='S',
+                        help='random seed (default: 1)')
+    parser.add_argument('--log-interval', type=int, default=100, metavar='N',
+                        help='how many batches to wait before logging training status')
+    parser.add_argument('--backend', type=str, default=None,
+                        help='backend for distributed training (tcp, gloo on cpu and gloo, nccl on gpu)')
+    
+    # Model Specific Details
+    parser.add_argument('--model', type=str, defautl='MixedLSTM',
+                        help='specify model as either MixedLSTM or ConvLSTM')
+    parser.add_argument('--n_features', type=int, default=39,
+                        help='number of features')
+    parser.add_argument('--n_hidden', type=int, default=512,
+                        help='number of hidden layers')
+    parser.add_argument('--languages', type=int, default=2,
+                        help='number of languages to learn')
+    parser.add_argument('--frames', type=int, default=150,
+                        help='total frames per sample/utterance')
+    parser.add_argument('--dropout', type=float, default=None,
+                        help='desired dropout')
+    parser.add_argument('--lstm_layers', type=int, default=1,
+                        help='total number of lstm layers')
+    parser.add_argument('--bidirectional', type=bool_parse, default=False,
+                        help='use bidirectional lstm')
+    parser.add_argument('--linear_layers', type=int, default=1,
+                        help='number of linear layers')
+    parser.add_argument('--kernel', type=tuple_parse, default=(3,3),
+                        help='shape of kernel to apply on image')
+    parser.add_argument('--output_channels', type=int, default=3,
+                        help='number of output channels/filters to convolve over')
+
+    # Container environment
+    env = sagemaker_containers.training_env()
+    parser.add_argument('--hosts', type=list, default=env.hosts)
+    parser.add_argument('--current-host', type=str, default=env.current_host)
+    parser.add_argument('--model-dir', type=str, default=env.model_dir)
+    parser.add_argument('--data-dir', type=str,
+                        default=env.channel_input_dirs['training'])
+    parser.add_argument('--num-gpus', type=int, default=env.num_gpus)
+
+    return parser
 
 if __name__ == '__main__':
     try:
-        parser = argparse.ArgumentParser()
-        
-        # Data and Training information
-        parser.add_argument('--batch-size', type=int, default=128, metavar='N',
-                            help='input batch size for training (default: 64)')
-        parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
-                            help='input batch size for testing (default: 1000)')
-        parser.add_argument('--epochs', type=int, default=2, metavar='N',
-                            help='number of epochs to train (default: 10)')
-        parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
-                            help='learning rate (default: 0.001)')
-        parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
-                            help='SGD momentum (default: 0.5)')
-        parser.add_argument('--seed', type=int, default=1, metavar='S',
-                            help='random seed (default: 1)')
-        parser.add_argument('--log-interval', type=int, default=100, metavar='N',
-                            help='how many batches to wait before logging training status')
-        parser.add_argument('--backend', type=str, default=None,
-                            help='backend for distributed training (tcp, gloo on cpu and gloo, nccl on gpu)')
-        
-        # Model Specific Details
-        parser.add_argument('--n_features', type=int, default=39,
-                            help='number of features')
-        parser.add_argument('--n_hidden', type=int, default=512,
-                            help='number of hidden layers')
-        parser.add_argument('--languages', type=int, default=2,
-                            help='number of languages to learn')
-        parser.add_argument('--frames', type=int, default=150,
-                            help='total frames per sample/utterance')
-        parser.add_argument('--dropout', type=float, default=None,
-                            help='desired dropout')
-        parser.add_argument('--lstm_layers', type=int, default=1,
-                            help='total number of lstm layers')
-        parser.add_argument('--bidirectional', type=str2bool, default=False,
-                            help='use bidirectional lstm')
-        parser.add_argument('--linear_layers', type=int, default=1,
-                            help='number of linear layers')
-
-        # Container environment
-        env = sagemaker_containers.training_env()
-        parser.add_argument('--hosts', type=list, default=env.hosts)
-        parser.add_argument('--current-host', type=str, default=env.current_host)
-        parser.add_argument('--model-dir', type=str, default=env.model_dir)
-        parser.add_argument('--data-dir', type=str,
-                            default=env.channel_input_dirs['training'])
-        parser.add_argument('--num-gpus', type=int, default=env.num_gpus)
-        
+        parser = get_parser()
         train(parser.parse_args())
         param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
         copyfile(param_path, os.path.join(model_path, 'model_params.json'))

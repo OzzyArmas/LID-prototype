@@ -277,13 +277,14 @@ def test(model, test_x, test_y, device, epoch, best_acc):
             output = model(data)
             test_loss += F.nll_loss(output, target, size_average=False).item()
             pred = output.max(1, keepdim=True)[1]
-            # Save the values that were wrong to calculate
-            # False Acceptances, False Rejections
+            
+            # Calculate indeces representing wrong predictions
             target = target.view_as(pred)
             equality_vec = pred.eq(target)
             indeces = (equality_vec == 0).nonzero()
             correct += equality_vec.sum().item()
             
+            # False Acceptances, False Rejections
             for idx in indeces:
                 FAR[pred[idx][0].item()] += 1
                 FRR[target[idx][0].item()] += 1
