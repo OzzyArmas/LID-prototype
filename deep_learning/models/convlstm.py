@@ -77,7 +77,7 @@ class ConvLSTM(nn.Module):
         self.pool_kernel = (1, 3)
 
         # 
-        self.pooled_dim = n_features // self.pool_kernel[0]
+        self.pooled_dim = self.feature_dim // self.pool_kernel[0]
         
         # Somer Kernel Information on what they do if data shape is:
         #      batch_size x channels x coefficients x frequencies
