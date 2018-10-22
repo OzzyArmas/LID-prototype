@@ -235,7 +235,7 @@ def train(args):
 
     # This specific weight value should only be used when training on the 
     # 6 Language Dataset made by oosv@amazon.com
-    loss_function = nn.NLLLoss(weight = SIX_LANGUAGE_DISTRIBUTION)
+    loss_function = nn.NLLLoss(weight = SIX_LANGUAGE_DISTRIBUTION.to(device))
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     best_acc = 0
     for epoch in range(1, args.epochs + 1):
