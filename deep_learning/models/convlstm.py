@@ -86,7 +86,7 @@ class ConvLSTM(nn.Module):
                                     nn.Conv2d(self.CHANNELS,
                                         self.out_channels,
                                         self.kernel,
-                                        padding=(0,3)),
+                                        padding=(kernel[0]//2, kernel[1]//2)),
                                     # the values here are also 
                                     # experimental but coded in to retain 
                                     # some consistency
