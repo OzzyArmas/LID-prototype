@@ -62,17 +62,18 @@ TEST_X = 'test_x_3.npy'
 TEST_Y = 'test_y_3.npy'
 
     
-DELTA_CHANNELS =  3
+CHANNELS =  3
 CONVLSTM = 'ConvLSTM'
 MIXEDLSTM = 'MixedLSTM'
-SIX_LANGUAGE_DISTRIBUTION = Torch.tensor([ # Fractions of language representation
+# for when using 6 languages
+SIX_LANGUAGE_DISTRIBUTION = torch.tensor([ # Fractions of language representation
                                         0.21185058424022032, # English
                                         0.21268393985578937, # Spanish
                                         0.21167232635453712, # French
                                         0.12096580122463167, # Italian
                                         0.12117971068745154, # Russian
                                         0.12164763763736998  # German
-                                        ])
+                                        ], dtype=torch.float32)
 
 def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kwargs):
     '''
@@ -94,8 +95,8 @@ def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kw
     if model == CONVLSTM:
         shape_x = train_data_x.size()  # Number Samples x frames x coefficients
         train_data_x = train_data_x.reshape(shape_x[0],
-                                            DELTA_CHANNELS,
-                                            shape_x[2] / DELTA_CHANNELS,
+                                            CHANNELS,
+                                            shape_x[2] / CHANNELS,
                                             shape_x[1])
 
 
@@ -142,8 +143,8 @@ def _get_test_data_loader(batch_size, training_dir, model, **kwargs):
     
     if model == CONVLSTM:
         test_data_x = test_data_x.reshape(shape_x[0],
-                                            DELTA_CHANNELS,
-                                            shape_x[2] / DELTA_CHANNELS,
+                                            CHANNELS,
+                                            shape_x[2] / CHANNELS,
                                             shape_x[1])
 
     test_data_x = torch.utils.data.DataLoader(test_data_x, 
