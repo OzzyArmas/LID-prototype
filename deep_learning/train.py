@@ -56,10 +56,10 @@ TRUTH_VALUES = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUES = {'no', 'false', 'f', 'n', '0'}
 
 # For debugging purposes only
-TRAIN_X = 'train_x_3.npy'
-TRAIN_Y = 'train_y_3.npy'
-TEST_X = 'test_x_3.npy'
-TEST_Y = 'test_y_3.npy'
+TRAIN_X = 'train_x_6.npy'
+TRAIN_Y = 'train_y_6.npy'
+TEST_X = 'test_x_6.npy'
+TEST_Y = 'test_y_6.npy'
 
     
 CHANNELS =  3
@@ -67,13 +67,13 @@ CONVLSTM = 'ConvLSTM'
 MIXEDLSTM = 'MixedLSTM'
 # for when using 6 languages
 SIX_LANGUAGE_DISTRIBUTION = torch.tensor([ # Fractions of language representation
-                                        0.21185058424022032, # English
-                                        0.21268393985578937, # Spanish
-                                        0.21167232635453712, # French
-                                        0.12096580122463167, # Italian
-                                        0.12117971068745154, # Russian
-                                        0.12164763763736998  # German
-                                        ], dtype=torch.float32)
+                                        0.21185058424022032,  # English
+                                        0.21268393985578937,  # Spanish
+                                        0.21167232635453712,  # French
+                                        0.12096580122463167,  # Italian
+                                        0.12117971068745154,  # Russian
+                                        0.12164763763736998], # German
+                                        dtype=torch.float32)
 
 def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kwargs):
     '''
@@ -233,8 +233,9 @@ def train(args):
         # single-machine multi-gpu case or single-machine or multi-machine cpu case
         model = torch.nn.DataParallel(model)
 
-    
-    loss_function = nn.NLLLoss()
+    # This specific weight value should only be used when training on the 
+    # 6 Language Dataset made by oosv@amazon.com
+    loss_function = nn.NLLLoss(weight = SIX_LANGUAGE_DISTRIBUTION)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     best_acc = 0
     for epoch in range(1, args.epochs + 1):
