@@ -71,7 +71,7 @@ DELTA_CHANNELS =  3
 CONVLSTM = 'ConvLSTM'
 MIXEDLSTM = 'MixedLSTM'
 
-def _get_train_data_loader(batch_size, training_dir, is_distributed, args, **kwargs):
+def _get_train_data_loader(batch_size, training_dir, is_distributed, model, **kwargs):
     '''
     :param batch_size: batch size to separate data into
     :param training_dir: directory to get data from,
@@ -89,7 +89,7 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, args, **kwa
     train_data_y = torch.tensor(train_data_y, dtype=torch.int64)
     
     shape_x = train_data_x.size()  # Number Samples x frames x coefficients
-    if args.model == CONVLSTM:
+    if model == CONVLSTM:
         train_data_x = train_data_x.reshape(shape_x[0],
                                             DELTA_CHANNELS,
                                             shape_x[2] / DELTA_CHANNELS,
@@ -136,10 +136,12 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
     test_data_y = torch.tensor(test_data_y, dtype=torch.int64)
 
     shape_x = test_data_x.size()  # Number Samples x frames x coefficients
-    test_data_x = test_data_x.reshape(shape_x[0],
-                                        DELTA_CHANNELS,
-                                        shape_x[2] / DELTA_CHANNELS,
-                                        shape_x[1])
+    
+    if model == CONVLSTM:
+        test_data_x = test_data_x.reshape(shape_x[0],
+                                            DELTA_CHANNELS,
+                                            shape_x[2] / DELTA_CHANNELS,
+                                            shape_x[1])
 
     test_data_x = torch.utils.data.DataLoader(test_data_x, 
                                        batch_size=batch_size, 
@@ -186,9 +188,11 @@ def train(args):
         torch.cuda.manual_seed(args.seed)
 
     train_x, train_y = _get_train_data_loader(args.batch_size, 
-                                        args.data_dir, 
+                                        args.data_dir,
+                                        args.model, 
                                         is_distributed)
-    test_x, test_y = _get_test_data_loader(args.test_batch_size, 
+    test_x, test_y = _get_test_data_loader(args.test_batch_size,
+                                        args.model,
                                         args.data_dir)
     model = None
     if args.model == CONVLSTM:
