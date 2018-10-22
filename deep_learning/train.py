@@ -413,7 +413,7 @@ def get_parser():
                         help='backend for distributed training (tcp, gloo on cpu and gloo, nccl on gpu)')
     
     # Model Specific Details
-    parser.add_argument('--model', type=str, defautl='MixedLSTM',
+    parser.add_argument('--model', type=str, default='MixedLSTM',
                         help='specify model as either MixedLSTM or ConvLSTM')
     parser.add_argument('--n_features', type=int, default=39,
                         help='number of features')
