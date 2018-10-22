@@ -1,8 +1,5 @@
-import train_convlstm
-import train_mixedlstm
-
 from models import convlstm
-
+from models import lstm
 # Important external libraries
 import numpy as np
 
@@ -66,6 +63,8 @@ if debug:
     TEST_Y = 'test_y_sm.npy'
     
 DELTA_CHANNELS =  3
+CONVLSTM = 'ConvLSTM'
+MIXEDLSTM = 'MixedLSTM'
 
 def _get_train_data_loader(batch_size, training_dir, is_distributed, **kwargs):
     '''
@@ -186,7 +185,7 @@ def train(args, model):
     test_x, test_y = _get_test_data_loader(args.test_batch_size, 
                                         args.data_dir)
     model = None
-    if args.model == 'ConvLSTM':
+    if args.model == CONVLSTM:
         model = convlstm.ConvLSTM(
                         n_features = args.n_features, 
                         n_hidden = args.n_hidden, 
@@ -195,8 +194,10 @@ def train(args, model):
                         dropout = args.dropout, 
                         bidirectional = args.bidirectional,
                         lstm_layers = args.lstm_layers,
-                        linear_layers = args.linear_layers
-                        kernel = args.kernel).to(device)
+                        linear_layers = args.linear_layers,
+                        kernel = args.kernel,
+                        out_channels = args.output_channels
+                        ).to(device)
     else:
         model = lstm.MixedLSTM(
                         n_features = args.n_features, 
@@ -430,7 +431,7 @@ def get_parser():
                         help='use bidirectional lstm')
     parser.add_argument('--linear_layers', type=int, default=1,
                         help='number of linear layers')
-    parser.add_argument('--kernel', type=tuple_parse, default=(3,3),
+    parser.add_argument('--kernel', type=tuple_parse, default=(1,7),
                         help='shape of kernel to apply on image')
     parser.add_argument('--output_channels', type=int, default=3,
                         help='number of output channels/filters to convolve over')
