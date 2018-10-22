@@ -90,7 +90,7 @@ class ConvLSTM(nn.Module):
                                     # the values here are also 
                                     # experimental but coded in to retain 
                                     # some consistency
-                                    nn.MaxPool2d(
+                                    nn.AvgPool2d(
                                         (1,3), padding=(0,1)))
 
 
