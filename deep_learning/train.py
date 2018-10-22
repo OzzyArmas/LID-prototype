@@ -153,7 +153,7 @@ def _get_test_data_loader(batch_size, training_dir, **kwargs):
     return test_data_x, test_data_y
 
 
-def train(args, model):
+def train(args):
     '''
     :param args: argument object containing values of commandline args
     '''
