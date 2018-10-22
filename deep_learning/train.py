@@ -120,7 +120,7 @@ def _get_train_data_loader(batch_size, training_dir, is_distributed, model, **kw
     return train_data_x, train_data_y
 
 
-def _get_test_data_loader(batch_size, training_dir, **kwargs):
+def _get_test_data_loader(batch_size, training_dir, model, **kwargs):
     '''
     :param batch_size: batch size to separate data into
     :param training_dir: directory to get data from,
