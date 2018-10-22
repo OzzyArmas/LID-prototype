@@ -56,16 +56,11 @@ TRUTH_VALUES = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUES = {'no', 'false', 'f', 'n', '0'}
 
 # For debugging purposes only
-debug = False
 TRAIN_X = 'train_x_3.npy'
 TRAIN_Y = 'train_y_3.npy'
 TEST_X = 'test_x_3.npy'
 TEST_Y = 'test_y_3.npy'
-if debug:
-    TRAIN_X = 'train_x_sm.npy'
-    TRAIN_Y = 'train_y_sm.npy'
-    TEST_X = 'test_x_sm.npy'
-    TEST_Y = 'test_y_sm.npy'
+
     
 DELTA_CHANNELS =  3
 CONVLSTM = 'ConvLSTM'

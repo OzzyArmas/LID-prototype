@@ -94,7 +94,9 @@ class ConvLSTM(nn.Module):
                                         self.CHANNELS,
                                         self.out_channels,
                                         self.kernel,
-                                        padding=(kernel[0]//2, kernel[1]//2)),
+                                        padding=(
+                                            kernel[0]//2,
+                                            kernel[1]//2)),
                                     nn.AvgPool2d(
                                         self.pool_kernel,
                                         padding = (

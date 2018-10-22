@@ -40,6 +40,9 @@ class MixedLSTM(nn.Module):
         '''
         super(MixedLSTM, self).__init__()
 
+        '''
+        conv_nets about to be added
+        '''
         # number of hidden dimensions, could be more complex
         # but we maintain the same number in all layers
         self.hidden_dim = n_hidden
@@ -77,8 +80,8 @@ class MixedLSTM(nn.Module):
         else:
             self.sequential = None
         
-        # main Rectifying Linear Unit
-        self.relu_main = nn.Tanh()
+        # Sigmoid Function
+        self.sigmoid_main = nn.Sigmoid()
         
         # definition of lstm
         self.lstm = nn.LSTM(
@@ -122,7 +125,7 @@ class MixedLSTM(nn.Module):
         
         # relu layer, does not affect shape
         # batch_length  x total_frames x n_hidden
-        out = self.relu_main(out)
+        out = self.sigmoid_main(out)
 
         # batch_length x total_frames x n_hidden
         out, self.hidden = self.lstm(out.view([-1, out.size(1), out.size(2)],
