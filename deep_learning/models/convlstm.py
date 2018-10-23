@@ -90,7 +90,6 @@ class ConvLSTM(nn.Module):
         #       May be larger than 3, it doesn't have to be just adjacent
         # kernel of size 3 are usually used to reduce complexity
         self.sequential_conv = nn.Sequential(
-                                    nn.BatchNorm2d(self.IN_CHANNELS),
                                     nn.Conv2d(
                                             self.IN_CHANNELS,
                                             out_channels,
