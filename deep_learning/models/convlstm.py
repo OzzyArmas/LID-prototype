@@ -107,7 +107,7 @@ class ConvLSTM(nn.Module):
         self.sigmoid_conv = nn.Sigmoid()
 
         # ReLU(convolution)
-        self.relu_conv = nn.ReLU()
+        self.relu_conv = nn.LeakyReLU()
         
         # THIS PORTION IS CURRENTLY DOING NOTHING
         # add Sequential layers for NN using and OrderedDict
@@ -165,8 +165,9 @@ class ConvLSTM(nn.Module):
         out = self.sequential_conv(x_in)
         
         # Activation Function for Convolution
-        out = self.sigmoid_conv(out)
+        #out = self.sigmoid_conv(out)
 
+        out = self.relu_conv(out)
         # reshape into batch_size x total_frames x channel * n_coefficients
         out = out.reshape([out.size(0), out.size(3), out.size(1) * out.size(2)])
         
