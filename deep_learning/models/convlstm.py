@@ -103,20 +103,30 @@ class ConvLSTM(nn.Module):
                                     #             self.pool_kernel[0]//2,
                                     #             self.pool_kernel[1]//2 )))
 
-        # main Linear Layer
-        self.linear_main = nn.Linear(self.out_channels * self.pooled_dim, self.hidden_dim)
+        # Sigmoig(convolution)
+        self.sigmoid_conv = nn.Sigmoid()
+
+        # ReLU(convolution)
+        self.relu_conv = nn.ReLU()
         
+        # THIS PORTION IS CURRENTLY DOING NOTHING
         # add Sequential layers for NN using and OrderedDict
         layers = OrderedDict()
         for layer in range(linear_layers - 1):
             layers['layer_' + str(layer)] = nn.Linear(self.hidden_dim,
-                                                      self.hidden_dim)
+                                                    self.hidden_dim)
             layers['relu_' + str(layer)] = nn.LeakyReLU()
         
         if len(layers) > 0:
             self.sequential = nn.Sequential(layers)
         else:
             self.sequential = None
+        # THE REST OF CODE DOES THINGS
+
+
+
+        # main Linear Layer
+        self.linear_main = nn.Linear(self.out_channels * self.pooled_dim, self.hidden_dim)
         
         # main Rectifying Linear Unit
         self.sigmoid_main = nn.Sigmoid()
@@ -154,6 +164,9 @@ class ConvLSTM(nn.Module):
         # batch_size x channels x n_coefficients x total_frames
         out = self.sequential_conv(x_in)
         
+        # Activation Function for Convolution
+        out = self.sigmoid_conv(out)
+
         # reshape into batch_size x total_frames x channel * n_coefficients
         out = out.reshape([out.size(0), out.size(3), out.size(1) * out.size(2)])
         
