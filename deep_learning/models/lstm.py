@@ -126,9 +126,9 @@ class MixedLSTM(nn.Module):
         # relu layer, does not affect shape
         # batch_length  x total_frames x n_hidden
         #out = self.sigmoid_main(out)
-
+        out = x_in
         # batch_length x total_frames x n_hidden
-        out, self.hidden = self.lstm(x_in.view([-1, out.size(1), out.size(2)],
+        out, self.hidden = self.lstm(out.view([-1, out.size(1), out.size(2)],
                                                                  self.hidden))
         
         # batch_length x 1 x n_hidden, only use scores from last state
