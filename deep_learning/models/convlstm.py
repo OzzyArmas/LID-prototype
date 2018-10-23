@@ -102,12 +102,6 @@ class ConvLSTM(nn.Module):
                                     #     padding = (
                                     #             self.pool_kernel[0]//2,
                                     #             self.pool_kernel[1]//2 )))
-
-        # Sigmoig(convolution)
-        self.sigmoid_conv = nn.Sigmoid()
-
-        # ReLU(convolution)
-        self.relu_conv = nn.LeakyReLU()
         
         # THIS PORTION IS CURRENTLY DOING NOTHING
         # add Sequential layers for NN using and OrderedDict
@@ -164,10 +158,6 @@ class ConvLSTM(nn.Module):
         # batch_size x channels x n_coefficients x total_frames
         out = self.sequential_conv(x_in)
         
-        # Activation Function for Convolution
-        #out = self.sigmoid_conv(out)
-
-        out = self.relu_conv(out)
         # reshape into batch_size x total_frames x channel * n_coefficients
         out = out.reshape([out.size(0), out.size(3), out.size(1) * out.size(2)])
         
