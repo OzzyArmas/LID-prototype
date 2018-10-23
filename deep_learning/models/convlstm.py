@@ -42,14 +42,14 @@ class ConvLSTM(nn.Module):
         conv_nets about to be added
         '''
         # Input Channels is always going to be three
-        self.CHANNELS = 3
+        self.IN_CHANNELS = 3
         
         # number of hidden dimensions, could be more complex
         # but we maintain the same number in all layers
         self.hidden_dim = n_hidden
 
         # number of features, aka input dimension
-        self.feature_dim = n_features // self.CHANNELS
+        self.feature_dim = n_features // self.IN_CHANNELS
         
         # number of languages to score, aka output dimension
         self.n_languages = languages
@@ -90,18 +90,14 @@ class ConvLSTM(nn.Module):
         #       May be larger than 3, it doesn't have to be just adjacent
         # kernel of size 3 are usually used to reduce complexity
         self.sequential_conv = nn.Sequential(
+                                    nn.BatchNorm2d(self.IN_CHANNELS),
                                     nn.Conv2d(
-                                        self.CHANNELS,
-                                        self.out_channels,
-                                        self.kernel,
-                                        padding=(
-                                            self.kernel[0]//2,
-                                            self.kernel[1]//2)))
-                                    # nn.AvgPool2d(
-                                    #     self.pool_kernel,
-                                    #     padding = (
-                                    #             self.pool_kernel[0]//2,
-                                    #             self.pool_kernel[1]//2 )))
+                                            self.IN_CHANNELS,
+                                            out_channels,
+                                            kernel = self.Kernel,
+                                            padding = (self.kernel[0]//2, self.kernel[1]//2)
+                                        )
+                                    )
         
         # THIS PORTION IS CURRENTLY DOING NOTHING
         # add Sequential layers for NN using and OrderedDict
