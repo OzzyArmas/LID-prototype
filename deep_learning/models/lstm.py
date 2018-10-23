@@ -120,8 +120,8 @@ class MixedLSTM(nn.Module):
         # batch_length x total_frames x n_features
         #out = self.linear_main(x_in)
         
-        if self.sequential:
-            out = self.sequential(out)
+        # if self.sequential:
+        #     out = self.sequential(out)
         
         # relu layer, does not affect shape
         # batch_length  x total_frames x n_hidden
