@@ -48,7 +48,7 @@ eval_path = os.path.join(input_path, eval_channel)
 # it's low priority as important metadata is being saved
 logger = logging.getLogger()
 
-# start timing how long will the job run for
+# Start timing how long will the job run for
 start = time.time()
 
 # Some CONSTANTS
@@ -65,15 +65,24 @@ TEST_Y = 'test_y_6.npy'
 CHANNELS =  3
 CONVLSTM = 'ConvLSTM'
 MIXEDLSTM = 'MixedLSTM'
-# for when using 6 languages
-SIX_LANGUAGE_DISTRIBUTION = torch.tensor([ # Fractions of language representation
-                                        0.21185058424022032,  # English
-                                        0.21268393985578937,  # Spanish
-                                        0.21167232635453712,  # French
-                                        0.12096580122463167,  # Italian
-                                        0.12117971068745154,  # Russian
-                                        0.12164763763736998], # German
-                                        dtype=torch.float32)
+# When using 6 languages
+# LANGUAGE_DISTRIBUTION = torch.tensor([ # Fractions of language representation
+#                                         0.21185058424022032,  # English
+#                                         0.21268393985578937,  # Spanish
+#                                         0.21167232635453712,  # French
+#                                         0.12096580122463167,  # Italian
+#                                         0.12117971068745154,  # Russian
+#                                         0.12164763763736998], # German
+#                                         dtype=torch.float32)
+
+# When using 5 languages
+LANGUAGE_DISTRIBUTION = torch.tensor([
+                                        0.38344811514872057,  # English
+                                        0.23969566704844636,  # Spanish
+                                        0.15729571068041073,  # French
+                                        0.08994382384586017,  # Italian
+                                        0.12961668327656220], # German
+                                        dty=torch.float32)
 
 def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kwargs):
     '''
@@ -235,7 +244,7 @@ def train(args):
 
     # This specific weight value should only be used when training on the 
     # 6 Language Dataset made by oosv@amazon.com
-    loss_function = nn.NLLLoss(weight = SIX_LANGUAGE_DISTRIBUTION.to(device))
+    loss_function = nn.NLLLoss(weight = LANGUAGE_DISTRIBUTION.to(device))
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     best_acc = 0
     for epoch in range(1, args.epochs + 1):
