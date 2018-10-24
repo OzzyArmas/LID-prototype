@@ -95,9 +95,7 @@ class ConvLSTM(nn.Module):
                                             out_channels,
                                             self.kernel,
                                             padding = (self.kernel[0]//2, self.kernel[1]//2)
-                                        ),
-                                    nn.BatchNorm2d(out_channels),
-                                    nn.Sigmoid()
+                                        )
                                     )
         
         # THIS PORTION IS CURRENTLY DOING NOTHING
