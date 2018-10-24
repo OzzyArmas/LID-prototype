@@ -68,20 +68,8 @@ class MixedLSTM(nn.Module):
         # main Linear Layer
         self.linear_main = nn.Linear(self.feature_dim, self.hidden_dim)
         
-        # add Sequential layers for NN using and OrderedDict
-        layers = OrderedDict()
-        for layer in range(linear_layers - 1):
-            layers['layer_' + str(layer)] = nn.Linear(self.hidden_dim,
-                                                    self.hidden_dim)
-            layers['relu_' + str(layer)] = nn.LeakyReLU()
-        
-        if len(layers) > 0:
-            self.sequential = nn.Sequential(layers)
-        else:
-            self.sequential = None
-        
         # Sigmoid Function
-        #self.sigmoid_main = nn.Sigmoid()
+        self.sigmoid_main = nn.Sigmoid()
         
         # definition of lstm
         self.lstm = nn.LSTM(
@@ -118,18 +106,17 @@ class MixedLSTM(nn.Module):
         
         # input dimension listed before the function is executed
         # batch_length x total_frames x n_features
-        #out = self.linear_main(x_in)
-        
-        # if self.sequential:
-        #     out = self.sequential(out)
-        
+        out = self.linear_main(x_in)
+
         # relu layer, does not affect shape
         # batch_length  x total_frames x n_hidden
-        #out = self.sigmoid_main(out)
-        out = x_in
+        out = self.sigmoid_main(out)
+
         # batch_length x total_frames x n_hidden
-        out, self.hidden = self.lstm(out.view([-1, out.size(1), out.size(2)],
-                                                                 self.hidden))
+        out, self.hidden = self.lstm(out.view([-1,
+                                        out.size(1),
+                                        out.size(2)],
+                                        self.hidden))
         
         # batch_length x 1 x n_hidden, only use scores from last state
         languages = self.language_scores(out[:,-1])

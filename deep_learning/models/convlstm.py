@@ -73,7 +73,7 @@ class ConvLSTM(nn.Module):
         self.kernel = kernel
 
         # The pooling kernel will affect the shape of the features
-        # entering the linear layer
+        # entering the linear layer, currently no pooling is being used
         self.pool_kernel = (1, 3)
 
         # 
@@ -82,7 +82,7 @@ class ConvLSTM(nn.Module):
         # Somer Kernel Information on what they do if data shape is:
         #      batch_size x channels x coefficients x frequencies
         # 
-        # 1,7 -> Get shifted frame ceofficients
+        # 1,7 -> Gets relationship along shifted frame ceofficients
         #       Treats each coefficient as if independent of others
         # 3,7 -> Gets shifted frame coefficients
         #       Treats coefficient as if it were related to adjancents ones
@@ -97,22 +97,6 @@ class ConvLSTM(nn.Module):
                                             padding = (self.kernel[0]//2, self.kernel[1]//2)
                                         )
                                     )
-        
-        # THIS PORTION IS CURRENTLY DOING NOTHING
-        # add Sequential layers for NN using and OrderedDict
-        layers = OrderedDict()
-        for layer in range(linear_layers - 1):
-            layers['layer_' + str(layer)] = nn.Linear(self.hidden_dim,
-                                                    self.hidden_dim)
-            layers['relu_' + str(layer)] = nn.LeakyReLU()
-        
-        if len(layers) > 0:
-            self.sequential = nn.Sequential(layers)
-        else:
-            self.sequential = None
-        # THE REST OF CODE DOES THINGS
-
-
 
         # main Linear Layer
         self.linear_main = nn.Linear(self.out_channels * self.pooled_dim, self.hidden_dim)
@@ -159,9 +143,6 @@ class ConvLSTM(nn.Module):
         # input dimension listed before the function below is executed
         # batch_length x total_frames x n_features
         out = self.linear_main(out)
-        
-        if self.sequential:
-            out = self.sequential(out)
         
         # relu layer, does not affect shape
         # batch_length  x total_frames x n_hidden
