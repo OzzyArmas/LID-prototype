@@ -89,17 +89,18 @@ class ConvLSTM(nn.Module):
         # 3,1 -> Forgoes shifted delta, only sees coeff relationships
         #       May be larger than 3, it doesn't have to be just adjacent
         # kernel of size 3 are usually used to reduce complexity
-        self.sequential_conv = nn.Sequential(
-                                    nn.Conv2d(
-                                            self.IN_CHANNELS,
-                                            out_channels,
-                                            self.kernel,
-                                            padding = (self.kernel[0]//2, self.kernel[1]//2)
-                                        )
-                                    )
+        self.quicker_conv()
+        # self.sequential_conv = nn.Sequential(
+        #                             nn.Conv2d(
+        #                                     self.IN_CHANNELS,
+        #                                     out_channels,
+        #                                     self.kernel,
+        #                                     padding = (self.kernel[0]//2, self.kernel[1]//2)
+        #                                 )
+        #                             )
 
         # main Linear Layer
-        self.linear_main = nn.Linear(self.out_channels * self.pooled_dim, self.hidden_dim)
+        self.linear_main = nn.Linear(56, self.hidden_dim) # self.out_channels * self.pooled_dim, self.hidden_dim)
         
         # main Rectifying Linear Unit
         self.sigmoid_main = nn.Sigmoid()
@@ -139,7 +140,7 @@ class ConvLSTM(nn.Module):
         
         # reshape into batch_size x total_frames x channel * n_coefficients
         out = out.reshape([out.size(0), out.size(3), out.size(1) * out.size(2)])
-        
+        print(out.size())
         # input dimension listed before the function below is executed
         # batch_length x total_frames x n_features
         out = self.linear_main(out)
@@ -189,3 +190,16 @@ class ConvLSTM(nn.Module):
         for x in x_list:
             pred.append(self.predict(x))
         return pred
+
+    def quicker_conv(self):
+        # 3 x 13 x 150
+        conv_one = nn.Conv2d(3,16,(1,7),stride=2)
+        # 16 x 13 x 64
+        pool     = nn.MaxPool2d((1,2), stride=(1,2))
+        # 16 x 13 x 32
+        sig      = nn.ReLU()
+        # 16 x 13 x 32
+        conv_two = nn.Conv2d(16,8,(1,3), padding = (0,1))
+        # 8 x 13 x 32
+        sig2     = nn.ReLU()
+        self.sequential_conv = nn.Sequential(conv_one, pool, sig, conv_two, sig2)
