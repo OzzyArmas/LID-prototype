@@ -2,7 +2,7 @@ from models import convlstm
 from models import lstm
 #!/usr/bin/env python
 
-# This file only works within sagemaker
+# This file only works within a sagemaker container
 import sagemaker_containers
 
 # Important external libraries
@@ -55,11 +55,14 @@ start = time.time()
 TRUTH_VALUES = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUES = {'no', 'false', 'f', 'n', '0'}
 
-# For debugging purposes only
-TRAIN_X = 'train_x_6.npy'
-TRAIN_Y = 'train_y_6.npy'
-TEST_X = 'test_x_6.npy'
-TEST_Y = 'test_y_6.npy'
+# file name:
+# usage_(x or y)_numberOfLanguages.npy
+# change the file names when training on different #of languages
+# and use respective dataset weights
+TRAIN_X = 'train_x.npy'
+TRAIN_Y = 'train_y.npy'
+TEST_X = 'test_x.npy'
+TEST_Y = 'test_y.npy'
 
     
 CHANNELS =  3
