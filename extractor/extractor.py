@@ -5,10 +5,10 @@ from python_speech_features import logfbank
 import scipy.io.wavfile as wav
 import numpy as np
 
-TOTAL_FRAMES = 75 #75 ms snippet length
+TOTAL_FRAMES = 50 # of frames per chunk
 MIN_ENERGY = 12
 
-def get_features(input_file):
+def get_features(input_file, chunk):
     '''
     :param input_file: input wave file to convert to to features
     :returns: an np.array vector (3,__,13) of MFCC features representing the input_file
@@ -26,14 +26,17 @@ def get_features(input_file):
     features = mfcc(sig, rate)
     features = filter_energy(features)
     if len(features) > 0:
-        out_feats = []
-        last_feat = 0
-        for feat in range(TOTAL_FRAMES, len(features), TOTAL_FRAMES):
-            out_feats.append(get_deltas(features[last_feat:feat]))
-            last_feat = feat
-        # at this point out_feats is either []
-        # or it's n_subsequences x TOTAL_FRAMES x 13 x 3
-        return out_feats
+        if chunk:
+            out_feats = []
+            last_feat = 0
+            for feat in range(TOTAL_FRAMES, len(features), TOTAL_FRAMES):
+                out_feats.append(get_deltas(features[last_feat:feat]))
+                last_feat = feat
+            # at this point out_feats is either []
+            # or it's n_subsequences x TOTAL_FRAMES x 13 x 3
+            return out_feats
+        else:
+            return get_deltas(features)
     
     return []
 
@@ -45,6 +48,7 @@ def filter_energy(features):
     energy = features[:,0]
     features = features[:,1:]
 
+    # Zeros non-speech vectors
     for i,e in enumerate(energy):
         if e < MIN_ENERGY:
            features[i] = np.zeros(np.shape(features[i]))
@@ -53,9 +57,9 @@ def filter_energy(features):
     # TODO: Implement a speech detector rather than volume detector
     # particularly important for it to work with whisper
     features = clean_up(features)
-    features = clean_up(features[::-1])[::-1] if len(features) > 0 else []
-    return features
-
+    # clean up reverse file, then return it to oringal order
+    return clean_up(features[::-1])[::-1] if len(features) > 0 else []
+    
 def clean_up(features):
     '''
     :param features: mfcc features to clean up
@@ -68,9 +72,7 @@ def clean_up(features):
     start_frame = -1
 
     for frame,feature in enumerate(features):
-        if not feature.all():
-            continue
-        else:
+        if feature.all():
             if start_frame == -1:
                 start_frame = frame
             count_frames += 1
@@ -95,7 +97,7 @@ def get_deltas(features):
     # return  3 x TOTAL_FRAMES x 13
     return np.concatenate(([features], [delt], [deltdelt]), axis = 0)
     
-def make_feature_set(file_list, language_label):
+def make_feature_set(file_list, language_label, chunk = True):
     '''
     :param file_list: list of .wav files to be converted into vectors
     :returns: a list of dimensions 
@@ -105,7 +107,7 @@ def make_feature_set(file_list, language_label):
     for idx, input_file in enumerate(file_list):
         # at this point out_feats is either []
         # or it's n_subsequences x 3 x TOTAL_FRAMES x 13
-        feat = get_features(input_file)
+        feat = get_features(input_file, chunk)
         if len(feat) > 0:
             feature_set.append(feat)
 
@@ -113,12 +115,12 @@ def make_feature_set(file_list, language_label):
     # n_files x variable n_subsequences x 3 x TOTAL_FRAMES x 13
     # which is why we concatenate along axis = 0 to get
     # sum(sub_sequences) x 3 x TOTAL_FRAMES x 13
-    feature_set = np.concatenate(feature_set, axis=0)
-    
+    if chunk:
+        feature_set = np.concatenate(feature_set, axis=0)
+
     # Given that files are all the same language per directory
     # iterating through a directory and creating all subsequences will
     # result on sum(sub_sequences) of langugage_labels
     label_vector = [language_label] * len(feature_set)
     
     return feature_set, label_vector
-
