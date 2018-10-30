@@ -85,7 +85,7 @@ LANGUAGE_DISTRIBUTION = torch.tensor([
                                         0.15729571068041073,  # French
                                         0.08994382384586017,  # Italian
                                         0.12961668327656220], # German
-                                        dty=torch.float32)
+                                        dtype=torch.float32)
 
 def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kwargs):
     '''
