@@ -311,7 +311,6 @@ def train(args):
 
 
     # the section below is reserved for training on full length (padded) utterances
-    '''
     full_train_x, full_train_y = _get_train_data_loader(args.batch_size, 
                                         FULL_TRAIN_X,
                                         FULL_TRAIN_Y,
@@ -360,7 +359,7 @@ def train(args):
         if best_acc < acc:
             save_model(model, args.model_dir)
             best_acc = acc
-    '''
+    
 
 
 def test(model, languages, test_x, test_y, device, epoch, best_acc):
