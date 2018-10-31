@@ -1,6 +1,9 @@
+#!/usr/bin/env python
+
+# package imports
 from models import convlstm
 from models import lstm
-#!/usr/bin/env python
+import metrics
 
 # This file only works within a sagemaker container
 import sagemaker_containers
@@ -20,6 +23,7 @@ import ast
 import logging
 from shutil import copyfile
 from collections import defaultdict
+from copy import deepcopy
 
 # Pytorch libraries
 import torch
@@ -56,18 +60,22 @@ TRUTH_VALUES = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUES = {'no', 'false', 'f', 'n', '0'}
 
 # file name:
-# usage_(x or y)_numberOfLanguages.npy
-# change the file names when training on different #of languages
-# and use respective dataset weights
-TRAIN_X = 'train_x.npy'
-TRAIN_Y = 'train_y.npy'
-TEST_X = 'test_x.npy'
-TEST_Y = 'test_y.npy'
+TRAIN_X      = 'train_x.npy'
+TRAIN_Y      = 'train_y.npy'
+TEST_X       = 'test_x.npy'
+TEST_Y       = 'test_y.npy'
+FULL_TRAIN_X = 'full_train_x.npy'
+FULL_TRAIN_Y = 'full_train_y.npy'
+FULL_TEST_X  = 'full_test_x.npy'
+FULL_TEST_Y  = 'full_test_y.npy'
 
-    
+
 CHANNELS =  3
 CONVLSTM = 'ConvLSTM'
 MIXEDLSTM = 'MixedLSTM'
+
+# The values below are hardcoded to represent current voxforge data sets being
+# used for 6 and 5 languages
 # When using 6 languages
 # LANGUAGE_DISTRIBUTION = torch.tensor([ # Fractions of language representation
 #                                         0.21185058424022032,  # English
@@ -87,7 +95,8 @@ LANGUAGE_DISTRIBUTION = torch.tensor([
                                         0.12961668327656220], # German
                                         dtype=torch.float32)
 
-def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kwargs):
+
+def _get_train_data_loader(batch_size, file_x, file_y, model, is_distributed, **kwargs):
     '''
     :param batch_size: batch size to separate data into
     :param training_dir: directory to get data from,
@@ -99,8 +108,8 @@ def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kw
     logger.warning("Get train data loader")
     
     # Pre shuffled data, x and y indeces matching
-    train_data_x = np.load(os.path.join(training_path, TRAIN_X))
-    train_data_y = np.load(os.path.join(training_path, TRAIN_Y)) 
+    train_data_x = np.load(os.path.join(training_path, file_x))
+    train_data_y = np.load(os.path.join(training_path, file_y)) 
     train_data_x = torch.tensor(train_data_x, dtype=torch.float32)
     train_data_y = torch.tensor(train_data_y, dtype=torch.int64)
     
@@ -108,13 +117,15 @@ def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kw
         shape_x = train_data_x.size()  # Number Samples x frames x coefficients
         train_data_x = train_data_x.reshape(shape_x[0],
                                             CHANNELS,
-                                            shape_x[2] / CHANNELS,
+                                            shape_x[2] // CHANNELS,
                                             shape_x[1])
 
 
     if is_distributed:
-        train_sampler_x = torch.utils.data.distributed.DistributedSampler(train_data_x)
-        train_sampler_y = torch.utils.data.distributed.DistributedSampler(train_data_y)
+        train_sampler_x = \
+            torch.utils.data.distributed.DistributedSampler(train_data_x)
+        train_sampler_y = \
+            torch.utils.data.distributed.DistributedSampler(train_data_y)
 
     else:
         train_sampler_x = None
@@ -136,7 +147,7 @@ def _get_train_data_loader(batch_size, training_dir, model, is_distributed, **kw
     return train_data_x, train_data_y
 
 
-def _get_test_data_loader(batch_size, training_dir, model, **kwargs):
+def _get_test_data_loader(batch_size, file_x, file_y, model, **kwargs):
     '''
     :param batch_size: batch size to separate data into
     :param training_dir: directory to get data from,
@@ -146,8 +157,8 @@ def _get_test_data_loader(batch_size, training_dir, model, **kwargs):
     logger.warning("Get test data loader")
     
     # Pre shuffled data, x and y indeces matching
-    test_data_x = np.load(os.path.join(eval_path, TEST_X))
-    test_data_y = np.load(os.path.join(eval_path, TEST_Y)) 
+    test_data_x = np.load(os.path.join(eval_path, file_x))
+    test_data_y = np.load(os.path.join(eval_path, file_y)) 
     test_data_x = torch.tensor(test_data_x, dtype=torch.float32)
     test_data_y = torch.tensor(test_data_y, dtype=torch.int64)
 
@@ -170,6 +181,37 @@ def _get_test_data_loader(batch_size, training_dir, model, **kwargs):
                                        **kwargs)
          
     return test_data_x, test_data_y
+
+
+def _get_model(args):
+    '''
+    :param args: arguments to pass in to model
+    :returns: a model using correct arguments
+    '''
+    if args.model == CONVLSTM:
+        return convlstm.ConvLSTM(
+                        n_features = args.n_features, 
+                        n_hidden = args.n_hidden, 
+                        languages = args.languages,
+                        total_frames = args.frames, 
+                        dropout = args.dropout, 
+                        bidirectional = args.bidirectional,
+                        lstm_layers = args.lstm_layers,
+                        kernel = args.kernel,
+                        out_channels = args.output_channels
+                        ).to(device)
+
+    # defaults to MixedLSTM
+    return lstm.MixedLSTM(
+                    n_features = args.n_features, 
+                    n_hidden = args.n_hidden, 
+                    languages = args.languages,
+                    total_frames = args.frames, 
+                    dropout = args.dropout, 
+                    bidirectional = args.bidirectional,
+                    linear_layers = args.linear_layers,
+                    lstm_layers = args.lstm_layers
+                    ).to(device)
 
 
 def train(args):
@@ -203,40 +245,19 @@ def train(args):
     if use_cuda:
         torch.cuda.manual_seed(args.seed)
 
-    train_x, train_y = _get_train_data_loader(args.batch_size, 
-                                        args.data_dir,
+    train_x, train_y = _get_train_data_loader(args.batch_size,
+                                        TRAIN_X,
+                                        TRAIN_Y,
                                         args.model, 
                                         is_distributed)
     
     test_x, test_y = _get_test_data_loader(args.test_batch_size,
-                                        args.data_dir,
+                                        TEST_X,
+                                        TEST_Y,
                                         args.model)
     
-    model = None
-    if args.model == CONVLSTM:
-        model = convlstm.ConvLSTM(
-                        n_features = args.n_features, 
-                        n_hidden = args.n_hidden, 
-                        languages = args.languages,
-                        total_frames = args.frames, 
-                        dropout = args.dropout, 
-                        bidirectional = args.bidirectional,
-                        lstm_layers = args.lstm_layers,
-                        linear_layers = args.linear_layers,
-                        kernel = args.kernel,
-                        out_channels = args.output_channels
-                        ).to(device)
-    else:
-        model = lstm.MixedLSTM(
-                        n_features = args.n_features, 
-                        n_hidden = args.n_hidden, 
-                        languages = args.languages,
-                        total_frames = args.frames, 
-                        dropout = args.dropout, 
-                        bidirectional = args.bidirectional,
-                        lstm_layers = args.lstm_layers,
-                        linear_layers = args.linear_layers
-                        ).to(device)
+    # get the correct model to train
+    model = _get_model(args)
     
     if is_distributed and use_cuda:
         # multi-machine multi-gpu case
@@ -282,16 +303,70 @@ def train(args):
                     epoch, batch_idx * len(feature_seq), len(train_x.sampler),
                     100. * batch_idx / len(train_x.sampler), loss.item()))
 
-        acc = test(model, test_x, test_y, device, epoch, best_acc)
+        acc = test(model, args.languages, test_x, test_y, device, epoch, best_acc)
         # save model with best accuracy
         if best_acc < acc:
             save_model(model, args.model_dir)
             best_acc = acc
 
 
-def test(model, test_x, test_y, device, epoch, best_acc):
+    # the section below is reserved for training on full length (padded) utterances
+    '''
+    full_train_x, full_train_y = _get_train_data_loader(args.batch_size, 
+                                        FULL_TRAIN_X,
+                                        FULL_TRAIN_Y,
+                                        args.model, 
+                                        is_distributed)
+    
+    full_test_x, full_test_y = _get_test_data_loader(args.batch_size, 
+                                        FULL_TEST_X,
+                                        FULL_TEST_Y,
+                                        args.model)
+    
+    for epoch in range(args.epochs + 1, args.epochs + 10):
+        model.to(device)
+        model.train()
+        
+        for batch_idx, (feature_seq, language) in enumerate(zip(full_train_x, full_train_y),1):
+            # indicate to use this data with GPU
+            feature_seq = feature_seq.to(device)
+            language = language.to(device)
+            
+            # zero_grad prevents training a new batch
+            # on the last batch's gradient
+            optimizer.zero_grad()
+
+            # this calls the forward function, through PyTorch
+            # output in shape batch_size x 1 x n_languages
+            scores = model(feature_seq)
+
+            # calculate loss and perform gradient descent using ADAM
+            loss = loss_function(scores, language.view(-1))
+            loss.backward()
+            if is_distributed and not use_cuda:
+                # average gradients manually for multi-machine cpu case only
+                _average_gradients(model)
+            optimizer.step()
+
+            # update logging information
+            if batch_idx % args.log_interval == 0:
+                logger.debug(
+                    'Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
+                    epoch, batch_idx * len(feature_seq), len(train_x.sampler),
+                    100. * batch_idx / len(train_x.sampler), loss.item()))
+
+        acc = test(model, full_test_x, full_test_y, device, epoch, best_acc)
+        # save model with best accuracy
+        if best_acc < acc:
+            save_model(model, args.model_dir)
+            best_acc = acc
+    '''
+
+
+def test(model, languages, test_x, test_y, device, epoch, best_acc):
     '''
     :param model: nn.Model representing most recently trained version of model
+    :param languages: total languages model is scoring over
     :param test_x: DataLoader for features
     :param test_y: DataLoader for labels
     :param device: torch.device to use, cpu/cuda
@@ -300,15 +375,19 @@ def test(model, test_x, test_y, device, epoch, best_acc):
         models performance metadata
     :returns: accuracy of current test to be used to saved best model
     '''
+    # model.eval() prevents model from accumulating gradients during testing
     model.eval()
     test_loss = 0
     correct = 0
+    
     # Start dictionaries to keep track of
     # False Acceptance Rate and False Rejection Rate
     FAR = defaultdict(float)
     FRR = defaultdict(float)
-    EER = defaultdict(float)
-    
+
+    # Initialize a confusion matrix in the form of an ndarray
+    conf_matrix = np.zeros((languages, languages))
+
     # Do not Calculate gradient when evaluating/testing data
     with torch.no_grad():
         for data, target in zip(test_x, test_y):
@@ -320,44 +399,56 @@ def test(model, test_x, test_y, device, epoch, best_acc):
             # Calculate indeces representing wrong predictions
             target = target.view_as(pred)
             equality_vec = pred.eq(target)
-            indeces = (equality_vec == 0).nonzero()
             correct += equality_vec.sum().item()
             
-            # False Acceptances, False Rejections
-            for idx in indeces:
+            # Wrong values, get False Acceptances, False Rejections
+            for idx in (equality_vec == 0).nonzero():
                 FAR[pred[idx][0].item()] += 1
                 FRR[target[idx][0].item()] += 1
 
-    for k1,k2 in zip(FAR, FRR):
-        FAR[k1] /= len(test_x.dataset)
-        FRR[k2] /= len(test_x.dataset)
-        EER[k1] = (FAR[k1] + FRR[k2]) / 2
+            for idx in range(len(pred)):
+                conf_matrix[target[idx][0].item()][pred[idx][0].item()] += 1
+
+    # Convert the counted false acceptances and rejections
+    # into rates, then calculate EER
+    FAR, FRR, EER = metrics.get_error_rates(FAR, FRR, len(test_x.dataset))
+
+    # get recall and precision using confusion matrix
+    recall = metrics.get_recall(conf_matrix)
+    precision = metrics.get_precision(conf_matrix)
 
     # Test metadata to save
-    test_loss /= len(test_x)
+    test_loss /= len(test_x.dataset)
     file_name = 'accuracy_{}.json'.format(epoch)
     end = time.time()
-    acc = {
+    metadata = {
         'test_loss'         : test_loss,
-        'acc'               : correct/len(test_x.dataset),
+        'metadata'               : correct/len(test_x.dataset),
         'time'              : end - start,
         'epoch'             : epoch,
         'FAR'               : FAR,
         'FRR'               : FRR,
         'EER'               : EER,
         'total_correct'     : correct,
-        'total_test_set'    : len(test_x.dataset)
+        'total_test_set'    : len(test_x.dataset),
+        'recall'            : recall,
+        'precision'         : precision, 
+        'f-score'           : metrics.get_fscore(precision, recall),
+        'confusion'         : conf_matrix
         }
     
     with open(os.path.join(model_path, file_name), 'w') as out:
-        json.dump(acc, out)    
+        json.dump(metadata, out, indent="\t")    
     
-    if best_acc < acc['acc']:
+    # save the best epoch metadata in a separate file and replace
+    # existing file
+    if best_acc < metadata['acc']:
         best_file = 'best_model.json'
         with open(os.path.join(model_path, best_file), 'w') as out:
-            json.dump(acc, out)
+            json.dump(metadata, out, indent="\t")
 
-    return acc['acc']
+    return metadata['acc']
+
 
 def _average_gradients(model):
     '''
@@ -399,6 +490,7 @@ def bool_parse(str_input):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
+
 def tuple_parse(str_input):
     '''
     :param str_input: string input to verify if the value is an input
@@ -416,6 +508,7 @@ def tuple_parse(str_input):
         return ast.literal_eval(str_input)
     else:
         raise argparse.ArgumentTypeError('Tuple or String expected')
+
 
 def get_parser():
     '''
@@ -465,7 +558,7 @@ def get_parser():
     parser.add_argument('--output_channels', type=int, default=3,
                         help='number of output channels/filters to convolve over')
 
-    # Container environment
+    # Container environment, basically this is taken car of by sage-maker
     env = sagemaker_containers.training_env()
     parser.add_argument('--hosts', type=list, default=env.hosts)
     parser.add_argument('--current-host', type=str, default=env.current_host)
@@ -475,6 +568,7 @@ def get_parser():
     parser.add_argument('--num-gpus', type=int, default=env.num_gpus)
 
     return parser
+
 
 if __name__ == '__main__':
     try:
