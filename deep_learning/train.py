@@ -23,7 +23,6 @@ import ast
 import logging
 from shutil import copyfile
 from collections import defaultdict
-from copy import deepcopy
 
 # Pytorch libraries
 import torch
@@ -436,7 +435,7 @@ def test(model, languages, test_x, test_y, device, epoch, best_acc):
     end = time.time()
     metadata = {
         'test_loss'         : test_loss,
-        'metadata'          : correct/len(test_x.dataset),
+        'acc'               : correct/len(test_x.dataset),
         'time'              : end - start,
         'epoch'             : epoch,
         'FAR'               : FAR,
