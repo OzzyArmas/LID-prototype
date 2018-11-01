@@ -137,7 +137,7 @@ class ConvLSTM(nn.Module):
         
         # reshape into batch_size x total_frames x channel * n_coefficients
         out = out.reshape([out.size(0), out.size(3), out.size(1) * out.size(2)])
-        print(out.size())
+        
         # input dimension listed before the function below is executed
         # batch_length x total_frames x n_features
         out = self.linear_main(out)

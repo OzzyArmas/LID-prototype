@@ -32,7 +32,7 @@ def get_fscore(precision, recall):
     :return: dictionary representing f-scores per language
     '''
     fscore = defaultdict(float)
-    for idx,(pre,rec) in enumerate(zip(precision, recall)):
+    for idx,(prec,rec) in enumerate(zip(precision, recall)):
         fscore[idx] = 2 * (prec * rec) / (prec + rec)
     return fscore
 
