@@ -6,7 +6,7 @@ def get_recall(conf_matrix):
         predicted labels
     :return: list containing recall values per language
     '''
-    recall = [lang : conf_matrix[lang][lang] for lang in range(len(conf_matrix))]
+    recall = [conf_matrix[lang][lang] for lang in range(len(conf_matrix))]
     for idx, rec in enumerate(recall):    
         recall[idx] = rec / sum(conf_matrix[idx])
 
