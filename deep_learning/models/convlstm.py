@@ -47,7 +47,7 @@ class ConvLSTM(nn.Module):
         self.hidden_dim = n_hidden
 
         # number of features, aka input dimension
-        self.feature_dim = n_features // self.IN_CHANNELS
+        self.feature_dim = n_features
         
         # number of languages to score, aka output dimension
         self.n_languages = languages
@@ -117,23 +117,16 @@ class ConvLSTM(nn.Module):
         # initialize hidden layer
         self.hidden = self.init_hidden()
 
-    def forward(self, x_in):
+    def forward(self, x):
         '''
-        :param x_in: sample audio
+        :param x: sample audio
         :return: scores for audio sample
         '''
-        # x_in must be shape:
-        # batch_size x channels x n_coefficients x frames
-        if not len(x_in.size()) == 4:
-            raise Exception("Data is not in the correct dimensions, \
-            correct dimensions should be \
-            batch_size x channels x coefficients x frequencies")
-        
         # make sure previous state (prediction) does not affect next state
         self.hidden = self.init_hidden()
 
         # batch_size x channels x n_coefficients x total_frames
-        out = self.sequential_conv(x_in)
+        out = self.sequential_conv(x)
         
         # reshape into batch_size x total_frames x channel * n_coefficients
         out = out.reshape([out.size(0), out.size(3), out.size(1) * out.size(2)])
@@ -177,6 +170,14 @@ class ConvLSTM(nn.Module):
         # May have to convert X to tensors
         with torch.no_grad():
             x = torch.tensor(x, dtype=torch.float32)
+            
+            # x must be shape:
+            # batch_size x channels x n_coefficients x frames
+            if not len(x.size()) == 4:
+                raise Exception("Data is not in the correct dimensions, \
+                correct dimensions should be \
+                batch_size x channels x coefficients x frequencies")
+
             return np.argmax(self.forward(x).numpy())
 
     def predict_all(self, x_list):
