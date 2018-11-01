@@ -191,7 +191,7 @@ def _get_test_data_loader(batch_size, file_x, file_y, model, **kwargs):
     test_data_x = torch.tensor(test_data_x, dtype=torch.float32)
     test_data_y = torch.tensor(test_data_y, dtype=torch.int64)    
 
-    shape_x = train_data_x.size()  
+    shape_x = test_data_x.size()  
     if model == CONVLSTM:
         if len(shape_x) > 3:
             # shape is Samples x channels x frames x coef
