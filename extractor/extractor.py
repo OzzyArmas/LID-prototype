@@ -1,4 +1,3 @@
-import python_speech_features
 from python_speech_features import mfcc
 from python_speech_features import delta
 from python_speech_features import logfbank
@@ -7,6 +6,39 @@ import numpy as np
 
 TOTAL_FRAMES = 50 # of frames per chunk
 MIN_ENERGY = 12
+MAX_EMERGY = 11 # to be used for noise data
+
+def get_noise(input_file, chunk = False):
+    '''
+    :param input_file: input wave file to convert to to features
+    :returns: an np.array vector (3,__,13) of MFCC features representing the input_file
+    '''
+    # check for .wav files
+    if not input_file[-4:] == '.wav':
+        return None
+    
+    # read .wav file and convert to mfcc
+    (rate, sig) = wav.read(input_file)
+    
+    # mfcc returns frames x 14 matrix
+    # where the first column is energy
+    # and the remaining 13 are mfcc
+    features = mfcc(sig, rate)
+    features = remove_speech(features)
+    features = get_deltas(features)
+
+
+def remove_speech(features):
+    energy = features[:,0]
+    features = features[:,1:]
+
+    # Zeros non-speech vectors
+    for i,e in enumerate(energy):
+        if e > MAX_ENERGY:
+           features[i] = np.zeros(np.shape(features[i]))
+
+    return features
+
 
 def get_features(input_file, chunk):
     '''
@@ -54,12 +86,11 @@ def filter_energy(features):
            features[i] = np.zeros(np.shape(features[i]))
      
     # Cuts initial and tail noise 
-    # TODO: Implement a speech detector rather than volume detector
-    # particularly important for it to work with whisper
     features = clean_up(features)
     # clean up reverse file, then return it to oringal order
     return clean_up(features[::-1])[::-1] if len(features) > 0 else []
-    
+
+   
 def clean_up(features):
     '''
     :param features: mfcc features to clean up
@@ -96,7 +127,8 @@ def get_deltas(features):
     deltdelt = delta(delt,2)
     # return  3 x TOTAL_FRAMES x 13
     return np.concatenate(([features], [delt], [deltdelt]), axis = 0)
-    
+
+
 def make_feature_set(file_list, language_label, chunk = True):
     '''
     :param file_list: list of .wav files to be converted into vectors

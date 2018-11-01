@@ -76,6 +76,7 @@ MIXEDLSTM = 'MixedLSTM'
 
 # The values below are hardcoded to represent current voxforge data sets being
 # used for 6 and 5 languages
+
 # When using 6 languages
 # LANGUAGE_DISTRIBUTION = torch.tensor([ # Fractions of language representation
 #                                         0.21185058424022032,  # English
@@ -88,12 +89,25 @@ MIXEDLSTM = 'MixedLSTM'
 
 # When using 5 languages
 LANGUAGE_DISTRIBUTION = torch.tensor([
-                                        0.38344811514872057,  # English
-                                        0.23969566704844636,  # Spanish
-                                        0.15729571068041073,  # French
-                                        0.08994382384586017,  # Italian
-                                        0.12961668327656220], # German
+                                        0.3941189279890582,  # English
+                                        0.23150166450243723,  # Spanish
+                                        0.15468183642212452,  # French
+                                        0.08698454499837227,  # Italian
+                                        0.13271302608800778], # German
                                         dtype=torch.float32)
+
+def _average_gradients(model):
+    '''
+    :param model: nn.Module representing model after a batch.
+        Gradiant Averaging gets the average gradient accross workers
+        and uses it to calculate gradiant descent
+    '''
+    # Gradient averaging.
+    size = float(dist.get_world_size())
+    
+    for param in model.parameters():
+        dist.all_reduce(param.grad.data, op=dist.reduce_op.SUM, group=0)
+        param.grad.data /= size
 
 
 def _get_train_data_loader(batch_size, file_x, file_y, model, is_distributed, **kwargs):
@@ -422,7 +436,7 @@ def test(model, languages, test_x, test_y, device, epoch, best_acc):
     end = time.time()
     metadata = {
         'test_loss'         : test_loss,
-        'metadata'               : correct/len(test_x.dataset),
+        'metadata'          : correct/len(test_x.dataset),
         'time'              : end - start,
         'epoch'             : epoch,
         'FAR'               : FAR,
@@ -447,20 +461,6 @@ def test(model, languages, test_x, test_y, device, epoch, best_acc):
             json.dump(metadata, out, indent="\t")
 
     return metadata['acc']
-
-
-def _average_gradients(model):
-    '''
-    :param model: nn.Module representing model after a batch.
-        Gradiant Averaging gets the average gradient accross workers
-        and uses it to calculate gradiant descent
-    '''
-    # Gradient averaging.
-    size = float(dist.get_world_size())
-    
-    for param in model.parameters():
-        dist.all_reduce(param.grad.data, op=dist.reduce_op.SUM, group=0)
-        param.grad.data /= size
 
 
 def save_model(model, model_dir):
