@@ -197,7 +197,7 @@ def _get_test_data_loader(batch_size, file_x, file_y, model, **kwargs):
     return test_data_x, test_data_y
 
 
-def _get_model(args):
+def _get_model(args, device):
     '''
     :param args: arguments to pass in to model
     :returns: a model using correct arguments
@@ -271,7 +271,7 @@ def train(args):
                                         args.model)
     
     # get the correct model to train
-    model = _get_model(args)
+    model = _get_model(args, device)
     
     if is_distributed and use_cuda:
         # multi-machine multi-gpu case
