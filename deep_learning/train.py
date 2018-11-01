@@ -205,7 +205,7 @@ def _get_test_data_loader(batch_size, file_x, file_y, model, **kwargs):
             # and is converted to Samples x channels x coeff x frames 
             test_data_x = test_data_x.reshape(shape_x[0],
                                               CHANNELS,
-                                              shape_x[2],
+                                              shape_x[2] // CHANNELS,
                                               shape_x[1])
     elif len(shape_x) > 3:
         # shape is Samples x channels x frames x coef
