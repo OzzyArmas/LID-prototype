@@ -26,8 +26,7 @@ class MixedLSTM(nn.Module):
                 total_frames = 75,
                 dropout=0,
                 bidirectional=False,
-                lstm_layers = 1,
-                linear_layers = 1):
+                lstm_layers = 1):
         '''
         :param n_features: number of features in a sample
         :param n_hidden: number of hidden dimensions to use
@@ -36,7 +35,6 @@ class MixedLSTM(nn.Module):
         :param dropout: dropout rate to use
         :param bidirectional: whether to use a BiLSTM or not
         :param lstm_layers: number of lstm layers
-        :param linear_layers: number of linear fully connected layers
         '''
         super(MixedLSTM, self).__init__()
 
@@ -91,26 +89,17 @@ class MixedLSTM(nn.Module):
         :param x_in: sample audio
         :return: scores for audio sample
         '''
-        
-        # during the prediction step, the input dimensions will
-        # be total_frames x n_features, the LSTM requires 3 dimensions
-        # thus we reshape the sample to 1 x total_frames x n_features
-        # implicitly in case sequence is shorter than frame length
-        shape = x_in.size()
-        if len(shape) < 3:
-            x_in = x_in.reshape(1, shape[0], shape[1])
-            shape = x_in.size()
-
         # make sure previous state (prediction) does not affect next state
         self.hidden = self.init_hidden()
         
+        out = x_in
         # input dimension listed before the function is executed
         # batch_length x total_frames x n_features
-        out = self.linear_main(x_in)
+        #out = self.linear_main(x_in)
 
         # relu layer, does not affect shape
         # batch_length  x total_frames x n_hidden
-        out = self.sigmoid_main(out)
+        #out = self.sigmoid_main(out)
 
         # batch_length x total_frames x n_hidden
         out, self.hidden = self.lstm(out.view([-1,
@@ -143,8 +132,18 @@ class MixedLSTM(nn.Module):
         '''
         super(MixedLSTM, self).eval()
         # May have to convert X to tensors
+                
+        # during the prediction step, the input dimensions will
+        # be total_frames x n_features, the LSTM requires 3 dimensions
+        # thus we reshape the sample to 1 x total_frames x n_features
+        # implicitly in case sequence is shorter than frame length
+
         with torch.no_grad():
             x = torch.tensor(x, dtype=torch.float32)
+            shape = x.size()
+            if len(shape) < 3:
+                x = x.reshape(1, shape[0], shape[1])
+            
             return np.argmax(self.forward(x).numpy())
 
     def predict_all(self, x_list):
@@ -155,3 +154,4 @@ class MixedLSTM(nn.Module):
         for x in x_list:
             pred.append(self.predict(x))
         return pred
+

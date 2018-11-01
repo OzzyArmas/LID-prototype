@@ -366,6 +366,8 @@ def train(args):
                                         FULL_TEST_Y,
                                         args.model)
     
+    optimizer = optim.Adam(model.parameters(), lr=args.lr / 10)
+    loss_function = nn.NLLLoss(weight = LANGUAGE_DISTRIBUTION.to(device))
     for epoch in range(args.epochs + 1, args.epochs + args.epochs // 2):
         model.to(device)
         model.train()
