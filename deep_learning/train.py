@@ -365,8 +365,8 @@ def train(args):
             if batch_idx % args.log_interval == 0:
                 logger.debug(
                     'Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
-                    epoch, batch_idx * len(feature_seq), len(train_x.sampler),
-                    100. * batch_idx / len(train_x.sampler), loss.item()))
+                    epoch, batch_idx * len(feature_seq), len(full_train_x.sampler),
+                    100. * batch_idx / len(full_train_x.sampler), loss.item()))
 
         acc = test(model, full_test_x, full_test_y, device, epoch, best_acc)
         # save model with best accuracy
