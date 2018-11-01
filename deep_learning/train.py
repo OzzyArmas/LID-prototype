@@ -447,7 +447,7 @@ def test(model, languages, test_x, test_y, device, epoch, best_acc):
         'recall'            : recall,
         'precision'         : precision, 
         'f-score'           : metrics.get_fscore(precision, recall),
-        'confusion'         : conf_matrix
+        'confusion'         : conf_matrix.tolist()
         }
     
     with open(os.path.join(model_path, file_name), 'w') as out:
