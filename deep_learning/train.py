@@ -127,11 +127,21 @@ def _get_train_data_loader(batch_size, file_x, file_y, model, is_distributed, **
     train_data_y = torch.tensor(train_data_y, dtype=torch.int64)
     
     if model == CONVLSTM:
-        shape_x = train_data_x.size()  # Number Samples x frames x coefficients
-        train_data_x = train_data_x.reshape(shape_x[0],
-                                            CHANNELS,
-                                            shape_x[2] // CHANNELS,
-                                            shape_x[1])
+        shape_x = train_data_x.size()  
+        if len(shape_x) > 3:
+            # shape is Samples x channels x frames x coef
+            # and converted to Samples x channels x coef x frames
+            train_data_x = train_data_x.reshape(shape_x[0],
+                                                shape_x[1],
+                                                shape_x[3],
+                                                shape_x[2])
+        else:
+            # shape is Number Samples x frames x coefficients
+            # and is converted to Samples x channels x coeff x frames
+            train_data_x = train_data_x.reshape(shape_x[0],
+                                                CHANNELS,
+                                                shape_x[2] // CHANNELS,
+                                                shape_x[1])
 
 
     if is_distributed:
