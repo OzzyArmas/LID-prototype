@@ -6,9 +6,9 @@ def get_recall(conf_matrix):
         predicted labels
     :return: list containing recall values per language
     '''
-    recall = {lang : conf_matrix[lang][lang] for lang in range(len(conf_matrix))}
+    recall = [lang : conf_matrix[lang][lang] for lang in range(len(conf_matrix))]
     for idx, rec in enumerate(recall):    
-        recall[rec] = recall[rec] / sum(conf_matrix[idx])
+        recall[idx] = rec / sum(conf_matrix[idx])
 
     return recall
 
@@ -18,9 +18,9 @@ def get_precision(conf_matrix):
         predicted labels
     :return: list containing precision values per language
     '''
-    precision = {lang : conf_matrix[lang][lang] for lang in range(len(conf_matrix))}
+    precision = [conf_matrix[lang][lang] for lang in range(len(conf_matrix))]
     for idx, prec in enumerate(precision):
-        precision[prec] = precision[prec] / sum(conf_matrix.transpose()[idx])
+        precision[idx] = prec / sum(conf_matrix.transpose()[idx])
 
     return precision
 
@@ -34,6 +34,7 @@ def get_fscore(precision, recall):
     fscore = defaultdict(float)
     for idx,(prec,rec) in enumerate(zip(precision, recall)):
         fscore[idx] = 2 * (prec * rec) / (prec + rec)
+    
     return fscore
 
 def get_error_rates(FA, FR, total):

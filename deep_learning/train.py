@@ -419,7 +419,7 @@ def test(model, languages, test_x, test_y, device, epoch, best_acc):
                 FAR[pred[idx][0].item()] += 1
                 FRR[target[idx][0].item()] += 1
 
-            for idx in range(len(pred)):
+            for idx,p in enumerate(pred):
                 conf_matrix[target[idx][0].item()][pred[idx][0].item()] += 1
 
     # Convert the counted false acceptances and rejections
