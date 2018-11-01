@@ -7,7 +7,7 @@ def get_recall(conf_matrix):
     :return: list containing recall values per language
     '''
     recall = {lang : conf_matrix[lang][lang] for lang in range(len(conf_matrix))}
-    for idx, rec in enumerate(recall)):    
+    for idx, rec in enumerate(recall):    
         recall[rec] = recall[rec] / sum(conf_matrix[idx])
 
     return recall
@@ -19,7 +19,7 @@ def get_precision(conf_matrix):
     :return: list containing precision values per language
     '''
     precision = {lang : conf_matrix[lang][lang] for lang in range(len(conf_matrix))}
-    for idx, prec in enumerate(precision)):
+    for idx, prec in enumerate(precision):
         precision[prec] = precision[prec] / sum(conf_matrix.transpose()[idx])
 
     return precision
@@ -32,7 +32,7 @@ def get_fscore(precision, recall):
     :return: dictionary representing f-scores per language
     '''
     fscore = defaultdict(float)
-    for idx,pre,rec in enumerate(zip(precision, recall)):
+    for idx,(pre,rec) in enumerate(zip(precision, recall)):
         fscore[idx] = 2 * (prec * rec) / (prec + rec)
     return fscore
 
