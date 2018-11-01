@@ -126,8 +126,8 @@ def _get_train_data_loader(batch_size, file_x, file_y, model, is_distributed, **
     train_data_x = torch.tensor(train_data_x, dtype=torch.float32)
     train_data_y = torch.tensor(train_data_y, dtype=torch.int64)
     
+    shape_x = train_data_x.size()  
     if model == CONVLSTM:
-        shape_x = train_data_x.size()  
         if len(shape_x) > 3:
             # shape is Samples x channels x frames x coef
             # and converted to Samples x channels x coef x frames
@@ -143,14 +143,12 @@ def _get_train_data_loader(batch_size, file_x, file_y, model, is_distributed, **
                                                 shape_x[2] // CHANNELS,
                                                 shape_x[1])
 
-    else:
-        shape_x = train_data_x.size()  
-        if len(shape_x) > 3:
-            # shape is Samples x channels x frames x coef
-            # and is converted to Samples x Frames x Channels * Coeff
-            train_data_x.reshape(shape_x[0],
-                                shape_x[2],
-                                shape_x[3] * shape_x[1])
+    elif len(shape_x > 3):
+        # shape is Samples x channels x frames x coef
+        # and is converted to Samples x Frames x Channels * Coeff
+        train_data_x.reshape(shape_x[0],
+                            shape_x[2],
+                            shape_x[3] * shape_x[1])
 
     if is_distributed:
         train_sampler_x = \
@@ -191,15 +189,30 @@ def _get_test_data_loader(batch_size, file_x, file_y, model, **kwargs):
     test_data_x = np.load(os.path.join(eval_path, file_x))
     test_data_y = np.load(os.path.join(eval_path, file_y)) 
     test_data_x = torch.tensor(test_data_x, dtype=torch.float32)
-    test_data_y = torch.tensor(test_data_y, dtype=torch.int64)
+    test_data_y = torch.tensor(test_data_y, dtype=torch.int64)    
 
-    shape_x = test_data_x.size()  # Number Samples x frames x coefficients
-    
+    shape_x = train_data_x.size()  
     if model == CONVLSTM:
+        if len(shape_x) > 3:
+            # shape is Samples x channels x frames x coef
+            # and converted to Samples x channels x coef x frames
+            test_data_x = test_data_x.reshape(shape_x[0],
+                                              shape_x[1],
+                                              shape_x[3],
+                                              shape_x[2])
+        else:
+            # shape is Number Samples x frames x coefficients
+            # and is converted to Samples x channels x coeff x frames 
+            test_data_x = test_data_x.reshape(shape_x[0],
+                                              CHANNELS,
+                                              shape_x[2],
+                                              shape_x[1])
+    elif len(shape_x) > 3:
+        # shape is Samples x channels x frames x coef
+        # and is converted to Samples x Frames x Channels * Coeff
         test_data_x = test_data_x.reshape(shape_x[0],
-                                            CHANNELS,
-                                            shape_x[2] / CHANNELS,
-                                            shape_x[1])
+                                          shape_x[2],
+                                          shape_x[3] * shape_x[1])
 
     test_data_x = torch.utils.data.DataLoader(test_data_x, 
                                        batch_size=batch_size, 
@@ -535,7 +548,7 @@ def get_parser():
     # Data and Training information
     parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
+    parser.add_argument('--test-batch-size', type=int, default=1024, metavar='N',
                         help='input batch size for testing (default: 1000)')
     parser.add_argument('--epochs', type=int, default=2, metavar='N',
                         help='number of epochs to train (default: 10)')
