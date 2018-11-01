@@ -336,7 +336,7 @@ def train(args):
                                         FULL_TEST_Y,
                                         args.model)
     
-    for epoch in range(args.epochs + 1, args.epochs + 10):
+    for epoch in range(args.epochs + 1, args.epochs + args.epochs // 2):
         model.to(device)
         model.train()
         
