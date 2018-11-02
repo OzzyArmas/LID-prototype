@@ -253,7 +253,6 @@ def _get_model(args, device):
                     total_frames = args.frames, 
                     dropout = args.dropout, 
                     bidirectional = args.bidirectional,
-                    linear_layers = args.linear_layers,
                     lstm_layers = args.lstm_layers
                     ).to(device)
 
