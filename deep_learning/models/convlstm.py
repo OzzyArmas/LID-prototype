@@ -16,7 +16,7 @@ from collections import OrderedDict
 
 class ConvLSTM(nn.Module):
     def __init__(self,
-                n_features      = 39,
+                n_features      = 13,
                 n_hidden        = 512,
                 languages       = 2, 
                 total_frames    = 150,
@@ -47,7 +47,7 @@ class ConvLSTM(nn.Module):
         self.hidden_dim = n_hidden
 
         # number of features, aka input dimension
-        self.feature_dim = n_features
+        self.feature_dim = n_features * out_channels
         
         # number of languages to score, aka output dimension
         self.n_languages = languages

@@ -71,7 +71,7 @@ class MixedLSTM(nn.Module):
         
         # definition of lstm
         self.lstm = nn.LSTM(
-            input_size = self.feature_dim, 
+            input_size = self.hidden_dim, 
             hidden_size = self.hidden_dim // (1 + self.BiLSTM),
             batch_first = True,
             num_layers = self.lstm_layers,
@@ -92,14 +92,14 @@ class MixedLSTM(nn.Module):
         # make sure previous state (prediction) does not affect next state
         self.hidden = self.init_hidden()
         
-        out = x_in
+        #out = x_in
         # input dimension listed before the function is executed
         # batch_length x total_frames x n_features
-        #out = self.linear_main(x_in)
+        out = self.linear_main(x_in)
 
         # relu layer, does not affect shape
         # batch_length  x total_frames x n_hidden
-        #out = self.sigmoid_main(out)
+        out = self.sigmoid_main(out)
 
         # batch_length x total_frames x n_hidden
         out, self.hidden = self.lstm(out.view([-1,
