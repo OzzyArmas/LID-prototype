@@ -146,7 +146,7 @@ def _get_train_data_loader(batch_size, file_x, file_y, model, is_distributed, **
     elif len(shape_x) > 3:
         # shape is Samples x channels x frames x coef
         # and is converted to Samples x Frames x Channels * Coeff
-        train_data_x.reshape(shape_x[0],
+        train_data_x = train_data_x.reshape(shape_x[0],
                             shape_x[2],
                             shape_x[3] * shape_x[1])
 
