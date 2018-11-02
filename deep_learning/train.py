@@ -399,7 +399,7 @@ def train(args):
                     epoch, batch_idx * len(feature_seq), len(full_train_x.sampler),
                     100. * batch_idx / len(full_train_x.sampler), loss.item()))
 
-        acc = test(model, full_test_x, full_test_y, device, epoch, best_acc)
+        acc = test(model, args.languages, full_test_x, full_test_y, device, epoch, best_acc)
         # save model with best accuracy
         if best_acc < acc:
             save_model(model, args.model_dir)
