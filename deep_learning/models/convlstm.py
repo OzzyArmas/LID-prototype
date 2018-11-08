@@ -96,18 +96,11 @@ class ConvLSTM(nn.Module):
         # converts LSTM output to languages
         self.language_scores = nn.Linear(self.hidden_dim, self.n_languages)
         
-        # initialize hidden layer
-        self.hidden = self.init_hidden()
-
     def forward(self, x):
         '''
         :param x: sample audio
         :return: scores for audio sample
         '''
-        # make sure previous state (prediction) does not affect next state
-        # may have te be changed to adjust for streaming data, as the forward
-        # function will be called every step
-        self.hidden = self.init_hidden()
 
         # batch_size x channels x n_coefficients x total_frames
         out = self.conv2d(x)
@@ -122,20 +115,7 @@ class ConvLSTM(nn.Module):
         languages = self.language_scores(out[:,-1])
 
         # batch_length x 1 x n_languages
-        return f.log_softmax(languages, dim=1)
-
-
-    def init_hidden(self):
-        '''
-        Initialize hidden state of lstm (hidden and forget gates)
-        dimensions are 2 x lstm_layers / directions x 1 x hidden_dim
-        '''
-        return (torch.zeros(
-                    self.lstm_layers // (1 + self.BiLSTM),
-                    1, self.hidden_dim),
-                torch.zeros(
-                    self.lstm_layers //  (1 + self.BiLSTM),
-                    1, self.hidden_dim))        
+        return f.log_softmax(languages, dim=1)       
     
     def predict(self, x):
         '''
@@ -153,7 +133,7 @@ class ConvLSTM(nn.Module):
                 correct dimensions should be \
                 batch_size x channels x coefficients x frequencies")
 
-            return np.argmax(self.forward(x).numpy())
+            return self.forward(x).numpy()
 
     def predict_all(self, x_list):
         '''
