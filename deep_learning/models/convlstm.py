@@ -116,8 +116,7 @@ class ConvLSTM(nn.Module):
         out = out.reshape([out.size(0), out.size(3), out.size(1) * out.size(2)])
 
         # batch_length x total_frames x n_hidden
-        out, self.hidden = self.lstm(out.view([-1, out.size(1), out.size(2)],
-                                                                 self.hidden))
+        out, self.hidden = self.lstm(out)
         
         # batch_length x 1 x n_hidden, only use scores from last state
         languages = self.language_scores(out[:,-1])
@@ -128,7 +127,7 @@ class ConvLSTM(nn.Module):
 
     def init_hidden(self):
         '''
-        Initialize hidden state of lstm
+        Initialize hidden state of lstm (hidden and forget gates)
         dimensions are 2 x lstm_layers / directions x 1 x hidden_dim
         '''
         return (torch.zeros(
