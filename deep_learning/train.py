@@ -3,7 +3,7 @@
 # package imports
 from models import convlstm
 from models import lstm
-import metrics
+from utils import metrics
 
 # This file only works within a sagemaker container
 import sagemaker_containers

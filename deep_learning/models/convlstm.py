@@ -67,40 +67,22 @@ class ConvLSTM(nn.Module):
         # number of channels/filters to apply during convolution
         self.out_channels = out_channels
         
-        # tubple representing the shape of the kernel to use for each filter
-        self.kernel = kernel
-
-        # The pooling kernel will affect the shape of the features
-        # entering the linear layer, currently no pooling is being used
-        self.pool_kernel = (1, 3)
-
-        # 
-        self.pooled_dim = self.feature_dim // self.pool_kernel[0]
-        
-        # Somer Kernel Information on what they do if data shape is:
-        #      batch_size x channels x coefficients x frequencies
-        # 
-        # 1,7 -> Gets relationship along shifted frame ceofficients
-        #       Treats each coefficient as if independent of others
-        # 3,7 -> Gets shifted frame coefficients
-        #       Treats coefficient as if it were related to adjancents ones
-        # 3,1 -> Forgoes shifted delta, only sees coeff relationships
-        #       May be larger than 3, it doesn't have to be just adjacent
-        # kernel of size 3 are usually used to reduce complexity
-        self.sequential_conv = nn.Sequential(
-                                    nn.Conv2d(
-                                            self.IN_CHANNELS,
-                                            out_channels,
-                                            self.kernel,
-                                            padding = (self.kernel[0]//2, self.kernel[1]//2)
-                                        )
-                                    )
+        # tuple representing the shape of the kernel to use for each channel
+        self.kernel = kernel 
+                
+        # batch_size x channels x coefficients x frames
+        self.conv2d = nn.Conv2d(
+                            self.IN_CHANNELS,
+                            out_channels,
+                            self.kernel,
+                            padding = (self.kernel[0]//2, self.kernel[1]//2)
+                        )
 
         # main Linear Layer
-        self.linear_main = nn.Linear(self.feature_dim , self.hidden_dim)
+        self.linear = nn.Linear(self.feature_dim , self.hidden_dim)
         
         # main Rectifying Linear Unit
-        self.sigmoid_main = nn.Sigmoid()
+        self.sigmoid = nn.Sigmoid()
         
         # definition of lstm
         self.lstm = nn.LSTM(
@@ -123,21 +105,15 @@ class ConvLSTM(nn.Module):
         :return: scores for audio sample
         '''
         # make sure previous state (prediction) does not affect next state
+        # may have te be changed to adjust for streaming data, as the forward
+        # function will be called every step
         self.hidden = self.init_hidden()
 
         # batch_size x channels x n_coefficients x total_frames
-        out = self.sequential_conv(x)
+        out = self.conv2d(x)
         
         # reshape into batch_size x total_frames x channel * n_coefficients
         out = out.reshape([out.size(0), out.size(3), out.size(1) * out.size(2)])
-        
-        # input dimension listed before the function below is executed
-        # batch_length x total_frames x n_features
-        out = self.linear_main(out)
-        
-        # relu layer, does not affect shape
-        # batch_length  x total_frames x n_hidden
-        out = self.sigmoid_main(out)
 
         # batch_length x total_frames x n_hidden
         out, self.hidden = self.lstm(out.view([-1, out.size(1), out.size(2)],

@@ -25,8 +25,12 @@ def get_noise(input_file, chunk = False):
     # and the remaining 13 are mfcc
     features = mfcc(sig, rate)
     features = remove_speech(features)
-    features = get_deltas(features)
-
+    if chunk:
+        out_feats = []
+        for feat in range(TOTAL_FRAMES, len(features), TOTAL_FRAMES):
+            out_feats.append(get_deltas(features[features[last_feat:feat]]))
+        features = out_feats
+    return features
 
 def remove_speech(features):
     energy = features[:,0]
@@ -65,7 +69,7 @@ def get_features(input_file, chunk):
                 out_feats.append(get_deltas(features[last_feat:feat]))
                 last_feat = feat
             # at this point out_feats is either []
-            # or it's n_subsequences x TOTAL_FRAMES x 13 x 3
+            # or it's n_subsequences x 3 x TOTAL_FRAMES x 13
             return out_feats
         else:
             return get_deltas(features)
@@ -156,3 +160,23 @@ def make_feature_set(file_list, language_label, chunk = True):
     label_vector = [language_label] * len(feature_set)
     
     return feature_set, label_vector
+
+def get_noise_set(file_list, noise_label, chunk = True):
+    '''
+    Very similar method to the one above, except it gets
+        noise instead of speech
+    :param file_list: list of files to parse
+    :param noise_label: label to indicate noise
+    :param chunk: whether or not to separate noise data into chunks
+    :return: (noise_set, noise_label), tuple of lists
+    '''
+    noise_set = []
+    for idx, input_file in enumerate(file_list):
+        feat = get_noise(input_file, chunk)
+
+    if chunk:
+        noise_set  = np.concatenate(noise_set, axis = 1)
+    
+    noise_label = [noise_label] * len(noise_set)
+
+    return noise_set, noise_label

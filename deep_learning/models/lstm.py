@@ -92,7 +92,6 @@ class MixedLSTM(nn.Module):
         # make sure previous state (prediction) does not affect next state
         self.hidden = self.init_hidden()
         
-        #out = x_in
         # input dimension listed before the function is executed
         # batch_length x total_frames x n_features
         out = self.linear_main(x_in)
