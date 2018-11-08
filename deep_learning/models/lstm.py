@@ -101,10 +101,7 @@ class MixedLSTM(nn.Module):
         out = self.sigmoid_main(out)
 
         # batch_length x total_frames x n_hidden
-        out, self.hidden = self.lstm(out.view([-1,
-                                        out.size(1),
-                                        out.size(2)],
-                                        self.hidden))
+        out, self.hidden = self.lstm(out)
         
         # batch_length x 1 x n_hidden, only use scores from last state
         languages = self.language_scores(out[:,-1])
