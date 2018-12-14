@@ -7,7 +7,7 @@ fi
 
 ZIP=$1
 LANG=$2
-TARGET="/tmp/data/voxforge/wav"/$LANG
+TARGET="/home/ec2-user/SageMaker/voxforge/wav"/$LANG
 TEMP_DIR=$(dirname ${ZIP})
 FILE_NAME=$(basename ${ZIP})
 STRIPPED_FILE_NAME=${FILE_NAME%.tgz}

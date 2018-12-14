@@ -18,19 +18,23 @@ def get_noise(input_file, chunk = False):
         return None
     
     # read .wav file and convert to mfcc
-    (rate, sig) = wav.read(input_file)
-    
+    try:
+        (rate, sig) = wav.read(input_file)
+        features = mfcc(sig, rate)
+        features = remove_speech(features)
+        if chunk:
+            out_feats = []
+            for feat in range(TOTAL_FRAMES, len(features), TOTAL_FRAMES):
+                out_feats.append(get_deltas(features[features[last_feat:feat]]))
+            features = out_feats
+        return features
+    except Exception as e:
+        print(f'skipping file {input_file}')
+        raise e
     # mfcc returns frames x 14 matrix
     # where the first column is energy
     # and the remaining 13 are mfcc
-    features = mfcc(sig, rate)
-    features = remove_speech(features)
-    if chunk:
-        out_feats = []
-        for feat in range(TOTAL_FRAMES, len(features), TOTAL_FRAMES):
-            out_feats.append(get_deltas(features[features[last_feat:feat]]))
-        features = out_feats
-    return features
+    
 
 def remove_speech(features):
     energy = features[:,0]
@@ -39,7 +43,7 @@ def remove_speech(features):
     # Zeros non-speech vectors
     for i,e in enumerate(energy):
         if e > MAX_ENERGY:
-           features[i] = np.zeros(np.shape(features[i]))
+            features[i] = np.zeros(np.shape(features[i]))
 
     return features
 
@@ -54,7 +58,10 @@ def get_features(input_file, chunk):
         return None
     
     # read .wav file and convert to mfcc
-    (rate, sig) = wav.read(input_file)
+    try:
+        (rate, sig) = wav.read(input_file)
+    except:
+        print(f'skipped file {input_file}')
     
     # mfcc returns frames x 14 matrix
     # where the first column is energy
@@ -143,7 +150,10 @@ def make_feature_set(file_list, language_label, chunk = True):
     for idx, input_file in enumerate(file_list):
         # at this point out_feats is either []
         # or it's n_subsequences x 3 x TOTAL_FRAMES x 13
-        feat = get_features(input_file, chunk)
+        try:
+            feat = get_features(input_file, chunk)
+        except:
+            continue
         if len(feat) > 0:
             feature_set.append(feat)
 

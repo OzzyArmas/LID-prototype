@@ -106,7 +106,7 @@ class ConvLSTM(nn.Module):
         out = self.conv2d(x)
         
         # reshape into batch_size x total_frames x channel * n_coefficients
-        out = out.reshape([out.size(0), out.size(3), out.size(1) * out.size(2)])
+        out = out.view([out.size(0), out.size(3), out.size(1) * out.size(2)])
 
         # batch_length x total_frames x n_hidden
         out, self.hidden = self.lstm(out)
