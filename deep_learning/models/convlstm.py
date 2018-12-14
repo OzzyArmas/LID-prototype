@@ -11,7 +11,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as f
-
 from collections import OrderedDict
 
 class ConvLSTM(nn.Module):
@@ -24,7 +23,7 @@ class ConvLSTM(nn.Module):
                 bidirectional   = False,
                 lstm_layers     = 1,
                 kernel          = (1,7),
-                out_channels    = 3):
+                out_channels    = 1):
         '''
         :param n_features: number of features in a sample
         :param n_hidden: number of hidden dimensions to use
